@@ -1,0 +1,51 @@
+# Build Java / Maven
+target/
+*.class
+*.jar
+!**/lib/*.jar
+.classpath
+.project
+.settings/
+
+# IDEs
+.idea/
+*.iml
+.vscode/
+.metadata/
+
+# Resultados experimentais (ver D-005 em docs/planejamento-inicial.md)
+runs/*/raw/
+runs/**/*.csv
+runs/**/*.log
+runs/**/*.txt
+!runs/**/summary.json
+!runs/**/.gitkeep
+
+# TLC
+spec/states/
+spec/*.tlaplus.skip
+spec/MC.out
+spec/MC.tla
+spec/MC.cfg
+
+# Logs
+*.log
+logs/
+
+# Saídas temporárias
+*.tmp
+*.swp
+*.bak
+*~
+
+# Python (analysis/)
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+.env
+
+# Sistema
+.DS_Store
+Thumbs.db
