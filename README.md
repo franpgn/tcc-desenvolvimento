@@ -48,7 +48,7 @@ tcc-desenvolvimento/
 ├── docs/                   # documentação técnica + resumos para o TCC
 │   ├── planejamento-inicial.md
 │   ├── pull-request-template.md
-│   └── resumos-para-tcc/   # consumidos pelos agentes acadêmicos
+│   └── resumos-para-tcc/   # consumidos pelo trabalho acadêmico
 ├── README.md
 ├── CONTRIBUTING.md
 ├── LICENSE
@@ -98,15 +98,14 @@ python compare_scenarios.py ../runs/S1-sem-falha ../runs/S1-F1
 
 ## Fluxo de desenvolvimento
 
-O trabalho neste repositório segue o protocolo definido em `docs/planejamento-inicial.md`:
+O trabalho neste repositório segue um protocolo estruturado em quatro passos, descrito em `docs/planejamento-inicial.md`:
 
-1. **Senior** planeja, decompõe em *issues* / *features*, define critérios de aceite.
-2. **Gestor** (autor do TCC + orientador) valida cada planejamento antes da execução.
-3. **Worker** implementa em *branch* específica, testa e documenta.
-4. **Senior** revisa e produz resumo técnico para os agentes acadêmicos (Escritor, Revisor, Bibliotecário) em `docs/resumos-para-tcc/`.
-5. **Gestor** valida a entrega antes de qualquer *merge* na `main` e antes de qualquer `git push`.
+1. **Planejamento técnico** de cada incremento, com critérios de aceite e *branch* nominal.
+2. **Aprovação do autor** antes da execução.
+3. **Implementação** em *branch* específica, com testes e documentação técnica.
+4. **Revisão e validação do autor** antes de qualquer *merge* em `main` ou `git push`.
 
-Detalhes em [`CONTRIBUTING.md`](CONTRIBUTING.md).
+Resumos técnicos das entregas são depositados em `docs/resumos-para-tcc/` para alimentar a escrita do TCC. Detalhes em [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 ## Estado atual
 

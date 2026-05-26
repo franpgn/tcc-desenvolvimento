@@ -1,6 +1,6 @@
 # Planejamento Inicial do Desenvolvimento Prático do TCC
 
-> Documento produzido pelo agente **Senior** em 2026-05-25 como primeira entrega do fluxo de desenvolvimento prático. Aguarda aprovação do **Gestor** antes de qualquer commit/push e antes de o **Worker** ser autorizado a executar a primeira tarefa técnica.
+> Primeira entrega do fluxo de desenvolvimento prático, produzida em 2026-05-25. A execução de qualquer tarefa técnica depende da aprovação prévia do autor.
 
 ## Objetivo do projeto prático
 
@@ -30,7 +30,7 @@ A consequência operacional: a Tabela 1 do Cap. 3 §3.3.5 é o **especificação
 
 ## Esqueleto pré-existente em `/workspace/prototipo/` (referência, não modificar)
 
-O Cap. 4 §4.4 da monografia declara como entregue ao fim da Semana 8 um esqueleto que **pertence à estrutura do TCC** (os agentes Senior e Worker não alteram esse caminho). O esqueleto tem o seguinte estado:
+O Cap. 4 §4.4 da monografia declara como entregue ao fim da Semana 8 um esqueleto que **pertence à estrutura do TCC** e, portanto, não é modificado pelo trabalho neste repositório. O esqueleto tem o seguinte estado:
 
 | Caminho | Tipo | Estado |
 |---|---|---|
@@ -42,7 +42,7 @@ O Cap. 4 §4.4 da monografia declara como entregue ao fim da Semana 8 um esquele
 | `spec/SessionStore.cfg` | Config TLC | Presente (não inspecionado nesta etapa) |
 | `scripts/` | Vazio | Scripts de injeção de F1/F3 ainda não criados |
 
-**Decisão proposta para o Gestor (D-001):** o repositório `tcc-desenvolvimento` **espelha e evolui** o esqueleto de `/workspace/prototipo/`. A migração inicial copia o conteúdo e organiza segundo o padrão de repositório Git; a partir daí, todo desenvolvimento ocorre exclusivamente em `tcc-desenvolvimento/`, e `prototipo/` fica congelado como *snapshot* coerente com o texto entregue do Cap. 4 §4.4. O caminho alternativo (recomeçar do zero em `tcc-desenvolvimento`) implica retrabalho sem ganho técnico e desalinha texto e código.
+**Decisão proposta ao autor (D-001):** o repositório `tcc-desenvolvimento` **espelha e evolui** o esqueleto de `/workspace/prototipo/`. A migração inicial copia o conteúdo e organiza segundo o padrão de repositório Git; a partir daí, todo desenvolvimento ocorre exclusivamente em `tcc-desenvolvimento/`, e `prototipo/` fica congelado como *snapshot* coerente com o texto entregue do Cap. 4 §4.4. O caminho alternativo (recomeçar do zero em `tcc-desenvolvimento`) implica retrabalho sem ganho técnico e desalinha texto e código.
 
 ## Tecnologias identificadas
 
@@ -59,7 +59,7 @@ O Cap. 4 §4.4 da monografia declara como entregue ao fim da Semana 8 um esquele
 | Injeção de falha F3 | `tc qdisc … netem delay lognormal` | Linux iproute2 | idem |
 | Análise estatística | Python + NumPy/SciPy ou R | a definir (P-011/CAND-020) | Cap. 3 §3.3.5 T22 |
 
-**Pontos abertos (P-A1).** Plataforma do *workload* foi fixada em Java/Hot Rod pelo Cap. 4; manter. **Pontos abertos (P-A2).** Linguagem de análise estatística não está fixada no texto — *default* sugerido: Python (SciPy + Matplotlib). Decisão do Gestor.
+**Pontos abertos (P-A1).** Plataforma do *workload* foi fixada em Java/Hot Rod pelo Cap. 4; manter. **Pontos abertos (P-A2).** Linguagem de análise estatística não está fixada no texto — *default* sugerido: Python (SciPy + Matplotlib). Decisão do autor.
 
 ## Arquitetura inicial proposta
 
@@ -108,13 +108,13 @@ A arquitetura é **horizontal** sobre o servidor Infinispan e **vertical** entre
 | `scripts/` | *Shell scripts* de injeção de falha, *warmup*, coleta | novo | F1 + F3 prontos; F2 + F4 *placeholders* |
 | `spec/` | Especificação TLA+ + cfg TLC + *script* de execução | espelho do `prototipo/` + complementos (O2, O5, O7; I5, I6 sob quiescência) | TLC executável em 3 configurações (2-2-2, 3-3-2, 3-3-3) |
 | `analysis/` | *Scripts* Python de parsing, percentis e *bootstrap* | novo | gera `summary.json` por cenário |
-| `runs/` | Saídas brutas e consolidadas dos experimentos | gerado em tempo de execução | versionado por *git-lfs* opcional ou ignorado conforme decisão do Gestor (P-A3) |
+| `runs/` | Saídas brutas e consolidadas dos experimentos | gerado em tempo de execução | versionado por *git-lfs* opcional ou ignorado conforme decisão do autor (P-A3) |
 | `docs/` | Documentação técnica (este planejamento, arquitetura, *backlog*, testes, decisões, *roadmap*) | novo | completo ao fim do TCC-I |
 | `.github/` | *Workflows* CI opcionais (lint Java, *mvn verify*, validação de TLC) | novo, opcional | a decidir (P-A4) |
 
 ## Backlog inicial
 
-Cada item do *backlog* é uma *issue* candidata; cada um vira `feature/<nome>` quando aprovado pelo Gestor. A ordem reflete dependências técnicas, não prioridade absoluta.
+Cada item do *backlog* é uma *issue* candidata; cada um vira `feature/<nome>` quando aprovado pelo autor. A ordem reflete dependências técnicas, não prioridade absoluta.
 
 | ID | Item | Branch sugerida | Cobertura na Tabela 1 do Cap. 3 §3.3.5 |
 |---|---|---|---|
@@ -149,20 +149,20 @@ Cada item do *backlog* é uma *issue* candidata; cada um vira `feature/<nome>` q
 6. **Bloco análise:** B-16 → B-17 → B-18. Resultado: `summary.json` por cenário com percentis, IC e Mann-Whitney.
 7. **Bloco entrega:** B-19 → B-20. Resultado: pipeline `run-baseline.sh` executa todo o experimento; documentação consolidada.
 
-Em paralelo: **resumo técnico para os agentes acadêmicos** a cada bloco fechado, dentro de `docs/resumos-para-tcc/`.
+Em paralelo: **resumo técnico para o TCC** a cada bloco fechado, dentro de `docs/resumos-para-tcc/`, para alimentar a escrita acadêmica.
 
 ## Critérios de aceite (gerais)
 
-Aplicáveis a todo item do *backlog* antes de o Senior aprovar a entrega do Worker:
+Aplicáveis a todo item do *backlog* antes da entrega ser considerada concluída:
 
 1. **Reprodutibilidade.** Comando único documentado executa a *feature*. Versão da imagem e *checksum* fixados.
 2. **Aderência ao Cap. 3 §3.3.5.** Cada *feature* mapeia explicitamente para a(s) linha(s) Tx que ela realiza.
 3. **Testes.** *Smoke test* mínimo (script ou JUnit) demonstrando que a *feature* funciona ponta-a-ponta.
-4. **Documentação.** Atualização de `docs/implementacao.md` (Worker) e `docs/decisoes-tecnicas.md` (Senior) com cada decisão não-trivial.
+4. **Documentação.** Atualização de `docs/implementacao.md` e `docs/decisoes-tecnicas.md` com cada decisão não-trivial.
 5. **Versionamento.** Commits no padrão `<tipo>: <descrição>`. *Branch* da *feature*. Sem *force-push*.
 6. **Nenhum efeito colateral em `/workspace/prototipo/` ou em `/workspace/*.tex`.**
 
-Critérios específicos por *feature* são detalhados em `docs/criterios-de-aceite.md` (a criar quando o Gestor aprovar este planejamento e o Senior expandir B-01).
+Critérios específicos por *feature* são detalhados em `docs/criterios-de-aceite.md` (a criar quando este planejamento for aprovado e B-01 for expandido).
 
 ## Riscos técnicos
 
@@ -174,33 +174,33 @@ Critérios específicos por *feature* são detalhados em `docs/criterios-de-acei
 | R-04: TLC explode espaço de estados em configuração 3-3-3 | Média | Médio (afeta B-15) | Cardinalidades em escada (REF-018); aceitar `3-3-2` como teto se 3-3-3 ultrapassar 30 min |
 | R-05: Volume de saída do *workload* (10⁶ ops × 30 reps × N cenários) | Média | Médio | Compactação LZ4 ou *streaming aggregation* dentro do `LatencyRegistry`; descartar latências brutas após agregação |
 | R-06: tempo de execução total acima do disponível | Média | Alto | Reduzir repetições para piloto (5) antes da rodada final (30); cenários executados sob fim de semana |
-| R-07: `git push` exige autenticação para o GitHub | Alta | Baixo (o Gestor executa) | Documentar; nunca tentar `push` no fluxo automatizado |
+| R-07: `git push` exige autenticação para o GitHub | Alta | Baixo (o autor executa) | Documentar; nunca tentar `push` no fluxo automatizado |
 
-## Pontos que precisam de validação do gestor
+## Pontos que precisam de validação do autor
 
 - **D-001.** Aprovar a migração do esqueleto `/workspace/prototipo/ → /workspace/tcc-desenvolvimento/` versus *bootstrap* limpo.
 - **D-002.** Aprovar Java 17 + Maven como *toolchain* obrigatório do *workload* (mantém o que está no `prototipo/`).
 - **D-003.** Aprovar Python (SciPy/Matplotlib) como *toolchain* da camada `analysis/`. Alternativa: R.
 - **D-004.** Aprovar o fluxo de *branch* — `main` como linha de entrega e *feature branches* por item do *backlog*; sem *develop* intermediária (P-A5).
 - **D-005.** Autorizar (ou não) o uso de Git LFS / extensão para versionar saídas em `runs/`. Alternativa: `runs/` em `.gitignore` e produzir apenas `summary.json` versionado.
-- **D-006.** Autorizar criação do *commit* inicial e do *push* para `origin/main` após aprovação deste documento. Sem aprovação, o Senior mantém tudo local.
-- **D-007.** Confirmar que o **Worker pode começar pela B-01** assim que houver aprovação, ou ajustar a ordem.
+- **D-006.** Autorizar criação do *commit* inicial e do *push* para `origin/main` após aprovação deste documento. Sem aprovação, tudo permanece local.
+- **D-007.** Confirmar que **B-01 pode iniciar** assim que houver aprovação, ou ajustar a ordem.
 - **D-008.** Confirmar se a análise estatística (B-16 a B-18) é entregável de TCC-I ou pode escorrer para TCC-II caso o cronograma aperte (escolha entre escopo e profundidade).
 - **D-009.** Definir a política de tratamento das variantes `DIST_SYNC` vs `DIST_ASYNC`: ambas no *baseline* de TCC-I ou apenas `DIST_ASYNC` (alvo) com `DIST_SYNC` apenas como controle de sanidade?
 
-## Próxima tarefa para o Worker
+## Próxima tarefa técnica
 
-Após aprovação deste planejamento, o Worker deve executar **B-01 — *Bootstrap* do repositório** na *branch* `feature/bootstrap-repo`, com o seguinte escopo:
+Após aprovação deste planejamento, executar **B-01 — *Bootstrap* do repositório** na *branch* `feature/bootstrap-repo`, com o seguinte escopo:
 
 1. Criar `README.md` na raiz, com seções: visão geral, vínculo com o TCC, estrutura de pastas, *quickstart* (subir *cluster*, rodar *workload*, rodar TLC), tabela de cobertura T1-T22.
 2. Criar `.gitignore` cobrindo `target/`, `runs/`, `*.log`, `.idea/`, `.vscode/`, `*.class`.
-3. Criar `LICENSE` (MIT ou alinhada ao orientador — Gestor decide; *default* MIT).
-4. Criar `CONTRIBUTING.md` curto descrevendo o fluxo Senior → Worker → Gestor e o padrão de commits/branches.
+3. Criar `LICENSE` (MIT ou alinhada ao orientador — autor decide; *default* MIT).
+4. Criar `CONTRIBUTING.md` curto descrevendo o fluxo de planejamento, execução, revisão e validação, além do padrão de commits e *branches*.
 5. Criar diretórios vazios com `.gitkeep`: `cluster/`, `workload/`, `scripts/`, `spec/`, `analysis/`, `runs/`, `docs/resumos-para-tcc/`.
-6. Mover este `docs/planejamento-inicial.md` permanece na raiz de `docs/`.
+6. Manter este `docs/planejamento-inicial.md` na raiz de `docs/`.
 7. *Commit* inicial: `chore: bootstrap inicial do repositório`.
 8. **Não fazer *push*** — preparar PR-template em `docs/pull-request-template.md` para uso futuro.
-9. Reportar ao Senior conforme template "Execução do Worker" definido em `/workspace/memoria-tcc/20-agentes-desenvolvimento.md`.
+9. Reportar a entrega no formato estabelecido (objetivo, *branch* utilizada, implementação, arquivos alterados, testes, problemas, documentação, pontos pendentes, próximo passo).
 
 **Critérios de aceite específicos de B-01:**
 

@@ -27,11 +27,11 @@ cd ../workload && mvn -q test
 <!-- Qual(is) linha(s) Tx da Tabela 1 do Cap. 3 §3.3.5 esta entrega realiza?
      Qual(is) seção(ões) da monografia precisa(m) ser atualizada(s)? -->
 
-## Pontos para validação do gestor
+## Pontos para validação do autor
 
-<!-- O que o Gestor precisa decidir antes do merge? -->
+<!-- O que o autor precisa decidir antes do merge? -->
 
 ---
 
-> Após a aprovação do Gestor, esta entrega pode ser preparada para *merge* em `main`.
+> Após a aprovação do autor, esta entrega pode ser preparada para *merge* em `main`.
 > Nenhum *merge* ocorre sem essa aprovação.
