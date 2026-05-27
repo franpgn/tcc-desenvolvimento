@@ -1,0 +1,133 @@
+{
+  "cenario": "S1-sem-falha",
+  "n_reamostragens": 5000,
+  "seed": 42,
+  "operacoes": {
+    "Block": {
+      "n": 35876,
+      "p50_ns": {
+        "estimativa": 1104217,
+        "ic95_inferior": 1098621,
+        "ic95_superior": 1109984
+      },
+      "p95_ns": {
+        "estimativa": 2129005,
+        "ic95_inferior": 2111643,
+        "ic95_superior": 2148793
+      },
+      "p99_ns": {
+        "estimativa": 2801619,
+        "ic95_inferior": 2754422,
+        "ic95_superior": 2846249
+      }
+    },
+    "IncrementFailure": {
+      "n": 35521,
+      "p50_ns": {
+        "estimativa": 605384,
+        "ic95_inferior": 603024,
+        "ic95_superior": 607811
+      },
+      "p95_ns": {
+        "estimativa": 994052,
+        "ic95_inferior": 987467,
+        "ic95_superior": 1000052
+      },
+      "p99_ns": {
+        "estimativa": 1216536,
+        "ic95_inferior": 1201788,
+        "ic95_superior": 1234721
+      }
+    },
+    "Login": {
+      "n": 35645,
+      "p50_ns": {
+        "estimativa": 1006718,
+        "ic95_inferior": 1001599,
+        "ic95_superior": 1011531
+      },
+      "p95_ns": {
+        "estimativa": 1931352,
+        "ic95_inferior": 1915156,
+        "ic95_superior": 1947702
+      },
+      "p99_ns": {
+        "estimativa": 2553494,
+        "ic95_inferior": 2513182,
+        "ic95_superior": 2595036
+      }
+    },
+    "Logout": {
+      "n": 35719,
+      "p50_ns": {
+        "estimativa": 999115,
+        "ic95_inferior": 994349,
+        "ic95_superior": 1003769
+      },
+      "p95_ns": {
+        "estimativa": 1930788,
+        "ic95_inferior": 1913075,
+        "ic95_superior": 1948856
+      },
+      "p99_ns": {
+        "estimativa": 2526025,
+        "ic95_inferior": 2489040,
+        "ic95_superior": 2563489
+      }
+    },
+    "ResetFailures": {
+      "n": 35908,
+      "p50_ns": {
+        "estimativa": 604390,
+        "ic95_inferior": 602153,
+        "ic95_superior": 606666
+      },
+      "p95_ns": {
+        "estimativa": 996423,
+        "ic95_inferior": 989646,
+        "ic95_superior": 1004410
+      },
+      "p99_ns": {
+        "estimativa": 1229116,
+        "ic95_inferior": 1213684,
+        "ic95_superior": 1243952
+      }
+    },
+    "Unblock": {
+      "n": 35558,
+      "p50_ns": {
+        "estimativa": 1102553,
+        "ic95_inferior": 1096895,
+        "ic95_superior": 1107903
+      },
+      "p95_ns": {
+        "estimativa": 2133138,
+        "ic95_inferior": 2117859,
+        "ic95_superior": 2152345
+      },
+      "p99_ns": {
+        "estimativa": 2822951,
+        "ic95_inferior": 2788907,
+        "ic95_superior": 2869556
+      }
+    },
+    "Validate": {
+      "n": 35773,
+      "p50_ns": {
+        "estimativa": 495296,
+        "ic95_inferior": 493322,
+        "ic95_superior": 497038
+      },
+      "p95_ns": {
+        "estimativa": 812841,
+        "ic95_inferior": 807353,
+        "ic95_superior": 818545
+      },
+      "p99_ns": {
+        "estimativa": 1011412,
+        "ic95_inferior": 994381,
+        "ic95_superior": 1021814
+      }
+    }
+  }
+}
