@@ -1,0 +1,86 @@
+TLC2 Version 2026.05.26.235334 (rev: 4ba7d88)
+Warning: Please run the Java VM, which executes TLC with a throughput optimized garbage collector, by passing the "-XX:+UseParallelGC" property.
+(Use the -nowarning option to disable this warning.)
+Running breadth-first search Model-Checking with fp 125 and seed 2541575226331658024 with 16 workers on 16 cores with 1986MB heap and 64MB offheap memory [pid: 82402] (Linux 6.12.76-linuxkit amd64, Eclipse Adoptium 17.0.9 64bit, MSBDiskFPSet, DiskStateQueue).
+Parsing file /workspace/tcc-desenvolvimento/spec/SessionStore.tla
+Parsing file /tmp/tlc-16755857788314272434/Naturals.tla (jar:file:/home/node/tools/tla2tools.jar!/tla2sany/StandardModules/Naturals.tla)
+Parsing file /tmp/tlc-16755857788314272434/Sequences.tla (jar:file:/home/node/tools/tla2tools.jar!/tla2sany/StandardModules/Sequences.tla)
+Parsing file /tmp/tlc-16755857788314272434/FiniteSets.tla (jar:file:/home/node/tools/tla2tools.jar!/tla2sany/StandardModules/FiniteSets.tla)
+Parsing file /tmp/tlc-16755857788314272434/_TLCTrace.tla (jar:file:/home/node/tools/tla2tools.jar!/tla2sany/StandardModules/_TLCTrace.tla)
+Parsing file /tmp/tlc-16755857788314272434/TLC.tla (jar:file:/home/node/tools/tla2tools.jar!/tla2sany/StandardModules/TLC.tla)
+Parsing file /tmp/tlc-16755857788314272434/TLCExt.tla (jar:file:/home/node/tools/tla2tools.jar!/tla2sany/StandardModules/TLCExt.tla)
+Parsing file /tmp/tlc-16755857788314272434/Integers.tla (jar:file:/home/node/tools/tla2tools.jar!/tla2sany/StandardModules/Integers.tla)
+Semantic processing of module Naturals
+Semantic processing of module Sequences
+Semantic processing of module FiniteSets
+Semantic processing of module TLC
+Semantic processing of module Integers
+Semantic processing of module TLCExt
+Semantic processing of module _TLCTrace
+Semantic processing of module SessionStore
+Linting of module TLCExt
+Linting of module _TLCTrace
+Linting of module SessionStore
+Starting... (2026-05-26 23:42:36)
+Computing initial states...
+Finished computing initial states: 1 distinct state generated at 2026-05-26 23:42:36.
+Error: Invariant I5 is violated.
+Error: The behavior up to this point is:
+State 1: <Initial predicate>
+/\ contador = ( r1 :> (u1 :> 0 @@ u2 :> 0 @@ u3 :> 0) @@
+  r2 :> (u1 :> 0 @@ u2 :> 0 @@ u3 :> 0) @@
+  r3 :> (u1 :> 0 @@ u2 :> 0 @@ u3 :> 0) )
+/\ motivos = ( r1 :> (s1 :> "NONE" @@ s2 :> "NONE" @@ s3 :> "NONE") @@
+  r2 :> (s1 :> "NONE" @@ s2 :> "NONE" @@ s3 :> "NONE") @@
+  r3 :> (s1 :> "NONE" @@ s2 :> "NONE" @@ s3 :> "NONE") )
+/\ sessaoDe = ( r1 :> (s1 :> "NONE" @@ s2 :> "NONE" @@ s3 :> "NONE") @@
+  r2 :> (s1 :> "NONE" @@ s2 :> "NONE" @@ s3 :> "NONE") @@
+  r3 :> (s1 :> "NONE" @@ s2 :> "NONE" @@ s3 :> "NONE") )
+/\ status = ( r1 :> (u1 :> "OPEN" @@ u2 :> "OPEN" @@ u3 :> "OPEN") @@
+  r2 :> (u1 :> "OPEN" @@ u2 :> "OPEN" @@ u3 :> "OPEN") @@
+  r3 :> (u1 :> "OPEN" @@ u2 :> "OPEN" @@ u3 :> "OPEN") )
+/\ sessoes = ( r1 :> (s1 :> "NONE" @@ s2 :> "NONE" @@ s3 :> "NONE") @@
+  r2 :> (s1 :> "NONE" @@ s2 :> "NONE" @@ s3 :> "NONE") @@
+  r3 :> (s1 :> "NONE" @@ s2 :> "NONE" @@ s3 :> "NONE") )
+/\ canal = <<>>
+
+State 2: <Login(r2,u1,s1) line 77, col 3 to line 84, col 87 of module SessionStore>
+/\ contador = ( r1 :> (u1 :> 0 @@ u2 :> 0 @@ u3 :> 0) @@
+  r2 :> (u1 :> 0 @@ u2 :> 0 @@ u3 :> 0) @@
+  r3 :> (u1 :> 0 @@ u2 :> 0 @@ u3 :> 0) )
+/\ motivos = ( r1 :> (s1 :> "NONE" @@ s2 :> "NONE" @@ s3 :> "NONE") @@
+  r2 :> (s1 :> "NONE" @@ s2 :> "NONE" @@ s3 :> "NONE") @@
+  r3 :> (s1 :> "NONE" @@ s2 :> "NONE" @@ s3 :> "NONE") )
+/\ sessaoDe = ( r1 :> (s1 :> "NONE" @@ s2 :> "NONE" @@ s3 :> "NONE") @@
+  r2 :> (s1 :> u1 @@ s2 :> "NONE" @@ s3 :> "NONE") @@
+  r3 :> (s1 :> "NONE" @@ s2 :> "NONE" @@ s3 :> "NONE") )
+/\ status = ( r1 :> (u1 :> "OPEN" @@ u2 :> "OPEN" @@ u3 :> "OPEN") @@
+  r2 :> (u1 :> "OPEN" @@ u2 :> "OPEN" @@ u3 :> "OPEN") @@
+  r3 :> (u1 :> "OPEN" @@ u2 :> "OPEN" @@ u3 :> "OPEN") )
+/\ sessoes = ( r1 :> (s1 :> "NONE" @@ s2 :> "NONE" @@ s3 :> "NONE") @@
+  r2 :> (s1 :> "VALID" @@ s2 :> "NONE" @@ s3 :> "NONE") @@
+  r3 :> (s1 :> "NONE" @@ s2 :> "NONE" @@ s3 :> "NONE") )
+/\ canal = <<[tipo |-> "SESSAO_VALIDA", chave |-> s1, payload |-> u1]>>
+
+State 3: <EntregaMensagem(r1) line 151, col 3 to line 177, col 84 of module SessionStore>
+/\ contador = ( r1 :> (u1 :> 0 @@ u2 :> 0 @@ u3 :> 0) @@
+  r2 :> (u1 :> 0 @@ u2 :> 0 @@ u3 :> 0) @@
+  r3 :> (u1 :> 0 @@ u2 :> 0 @@ u3 :> 0) )
+/\ motivos = ( r1 :> (s1 :> "NONE" @@ s2 :> "NONE" @@ s3 :> "NONE") @@
+  r2 :> (s1 :> "NONE" @@ s2 :> "NONE" @@ s3 :> "NONE") @@
+  r3 :> (s1 :> "NONE" @@ s2 :> "NONE" @@ s3 :> "NONE") )
+/\ sessaoDe = ( r1 :> (s1 :> u1 @@ s2 :> "NONE" @@ s3 :> "NONE") @@
+  r2 :> (s1 :> u1 @@ s2 :> "NONE" @@ s3 :> "NONE") @@
+  r3 :> (s1 :> "NONE" @@ s2 :> "NONE" @@ s3 :> "NONE") )
+/\ status = ( r1 :> (u1 :> "OPEN" @@ u2 :> "OPEN" @@ u3 :> "OPEN") @@
+  r2 :> (u1 :> "OPEN" @@ u2 :> "OPEN" @@ u3 :> "OPEN") @@
+  r3 :> (u1 :> "OPEN" @@ u2 :> "OPEN" @@ u3 :> "OPEN") )
+/\ sessoes = ( r1 :> (s1 :> "VALID" @@ s2 :> "NONE" @@ s3 :> "NONE") @@
+  r2 :> (s1 :> "VALID" @@ s2 :> "NONE" @@ s3 :> "NONE") @@
+  r3 :> (s1 :> "NONE" @@ s2 :> "NONE" @@ s3 :> "NONE") )
+/\ canal = <<>>
+
+2658 states generated, 2400 distinct states found, 2338 states left on queue.
+The depth of the complete state graph search is 7.
+Finished in 00s at (2026-05-26 23:42:36)
+Trace exploration spec path: ./SessionStore_TTrace_1779864155.tla

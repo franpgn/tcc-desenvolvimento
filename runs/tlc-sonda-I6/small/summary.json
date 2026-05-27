@@ -1,0 +1,13 @@
+{
+  "rodada": "quarta — sonda de I6 (I1+I2+I5 desabilitados)",
+  "config": "MC-small-sonda-I6.cfg",
+  "cardinalidade": { "IDS": 2, "SIDS": 3, "REPLICAS": 2, "LIMITE": 3 },
+  "data_execucao": "2026-05-26T23:42:55Z",
+  "estados_gerados": 5894,
+  "estados_distintos": 4864,
+  "profundidade_grafo": 7,
+  "veredito": "INVARIANT_VIOLATED",
+  "invariante_violado": "I6",
+  "invariantes_OK_ate_aqui": ["TypeOK", "I3", "I4"],
+  "trace_file": "SessionStore_TTrace_1779864174.tla"
+}

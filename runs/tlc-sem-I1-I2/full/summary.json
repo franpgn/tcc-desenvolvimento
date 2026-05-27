@@ -1,0 +1,13 @@
+{
+  "rodada": "terceira — sonda de I3/I4/I5 (I1+I2 desabilitados)",
+  "config": "MC-full-sem-I1-I2.cfg",
+  "cardinalidade": { "IDS": 3, "SIDS": 3, "REPLICAS": 3, "LIMITE": 3 },
+  "data_execucao": "2026-05-26T23:42:36Z",
+  "estados_gerados": 2658,
+  "estados_distintos": 2400,
+  "profundidade_grafo": 7,
+  "veredito": "INVARIANT_VIOLATED",
+  "invariante_violado": "I5",
+  "invariantes_OK_ate_aqui": ["TypeOK", "I3", "I4"],
+  "trace_file": "SessionStore_TTrace_1779864155.tla"
+}

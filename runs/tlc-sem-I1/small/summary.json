@@ -1,0 +1,12 @@
+{
+  "rodada": "segunda — sonda de I2 (I1 desabilitado)",
+  "config": "MC-small-sem-I1.cfg",
+  "cardinalidade": { "IDS": 2, "SIDS": 3, "REPLICAS": 2, "LIMITE": 3 },
+  "data_execucao": "2026-05-26T23:42:18Z",
+  "estados_gerados": 271,
+  "estados_distintos": 268,
+  "profundidade_grafo": 6,
+  "veredito": "INVARIANT_VIOLATED",
+  "invariante_violado": "I2",
+  "trace_file": "SessionStore_TTrace_1779864137.tla"
+}

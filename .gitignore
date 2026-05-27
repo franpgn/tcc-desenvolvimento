@@ -50,8 +50,10 @@ venv/
 .DS_Store
 Thumbs.db
 
-# Resultados de TLC: permitir trace e summary.json, ignorar diretório states/
-!runs/tlc/**/SessionStore_TTrace_*.tla
-!runs/tlc/**/output.txt
-!runs/tlc/**/contraexemplo*.txt
-runs/tlc/**/states/
+# Resultados de TLC: permitir trace, output e summary.json em qualquer subpasta
+# tlc* (rodada de referência, sondas com invariantes desabilitados, etc.).
+# Ignora apenas o diretório states/ interno do TLC, que pode crescer indefinidamente.
+!runs/tlc*/**/SessionStore_TTrace_*.tla
+!runs/tlc*/**/output.txt
+!runs/tlc*/**/contraexemplo*.txt
+runs/tlc*/**/states/
