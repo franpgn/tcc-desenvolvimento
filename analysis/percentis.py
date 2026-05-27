@@ -1,0 +1,163 @@
+#!/usr/bin/env python3
+"""
+analysis/percentis.py
+=====================
+
+Realiza B-16 do backlog: calcula percentis de latência por operação
+sobre os CSVs produzidos pelo programa de carga.
+
+Formato CSV esperado por execução (uma linha por operação):
+
+    op_id,operation,start_ns,end_ns,replica,return_code,key
+
+A latência por operação é (end_ns - start_ns), em nanossegundos.
+
+Linha T13 da Tabela 1 do Cap. 3 §3.3.5: reportar p50, p95, p99 como
+obrigatórios; p99,9 quando a contagem total da operação alcançar
+1 000 000 de amostras (regra estatística: pelo menos 10^3 observações
+na cauda para um percentil estável).
+
+Saída: imprime um resumo em stdout e grava runs/<cenário>/summary.json
+com a estrutura:
+
+    {
+      "cenario": "<nome>",
+      "execucoes": <int, número de CSVs lidos>,
+      "operacoes": {
+          "<nome_operacao>": {
+              "n": <int>,
+              "media_ns": <float>,
+              "p50_ns": <int>,
+              "p95_ns": <int>,
+              "p99_ns": <int>,
+              "p99_9_ns": <int|null>,
+              "taxa_erro": <float entre 0 e 1>
+          },
+          ...
+      }
+    }
+
+Uso:
+    python3 percentis.py runs/<cenário>
+    python3 percentis.py runs/S1-sem-falha
+"""
+from __future__ import annotations
+
+import argparse
+import csv
+import json
+import sys
+from pathlib import Path
+from collections import defaultdict
+
+import numpy as np
+
+
+SUCESSOS = {"OK", "VALID", "INVALID", "COUNTED", "ALREADY_INVALID", "BLOCKED",
+            "ALREADY_BLOCKED", "NOT_BLOCKED", "NONE"}
+
+
+def carregar_csvs(diretorio: Path) -> dict[str, list[tuple[float, str]]]:
+    """Lê todos os CSVs do diretório e agrega por operação.
+
+    Retorna: dict { operacao -> lista de (latencia_ns, return_code) }.
+    """
+    if not diretorio.exists():
+        raise FileNotFoundError(f"diretório não encontrado: {diretorio}")
+
+    csvs = sorted(diretorio.glob("*.csv"))
+    if not csvs:
+        raise FileNotFoundError(f"nenhum CSV em {diretorio}")
+
+    por_operacao: dict[str, list[tuple[float, str]]] = defaultdict(list)
+
+    for csvfile in csvs:
+        with csvfile.open() as fh:
+            reader = csv.DictReader(fh)
+            for row in reader:
+                try:
+                    inicio = int(row["start_ns"])
+                    fim = int(row["end_ns"])
+                    latencia = fim - inicio
+                    if latencia < 0:
+                        continue
+                    por_operacao[row["operation"]].append((latencia, row["return_code"]))
+                except (KeyError, ValueError):
+                    continue
+
+    return por_operacao
+
+
+def calcular_estatisticas(amostras: list[tuple[float, str]]) -> dict:
+    if not amostras:
+        return {}
+    latencias = np.array([a[0] for a in amostras], dtype=np.int64)
+    codigos = [a[1] for a in amostras]
+    n = len(latencias)
+    erros = sum(1 for c in codigos if c not in SUCESSOS and not c.startswith("UNKNOWN"))
+
+    resultado = {
+        "n": int(n),
+        "media_ns": float(np.mean(latencias)),
+        "p50_ns": int(np.percentile(latencias, 50, method="lower")),
+        "p95_ns": int(np.percentile(latencias, 95, method="lower")),
+        "p99_ns": int(np.percentile(latencias, 99, method="lower")),
+        "p99_9_ns": int(np.percentile(latencias, 99.9, method="lower")) if n >= 1_000_000 else None,
+        "taxa_erro": erros / n,
+    }
+    return resultado
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(
+        description="Calcula percentis de latência por operação para um cenário."
+    )
+    parser.add_argument(
+        "diretorio",
+        type=Path,
+        help="Diretório com os CSVs de uma execução (ex.: runs/S1-sem-falha)",
+    )
+    parser.add_argument(
+        "--cenario",
+        type=str,
+        default=None,
+        help="Nome do cenário (default: nome do diretório)",
+    )
+    args = parser.parse_args()
+
+    cenario = args.cenario or args.diretorio.name
+    por_operacao = carregar_csvs(args.diretorio)
+
+    saida = {
+        "cenario": cenario,
+        "execucoes": len(sorted(args.diretorio.glob("*.csv"))),
+        "operacoes": {},
+    }
+
+    for op_nome, amostras in sorted(por_operacao.items()):
+        saida["operacoes"][op_nome] = calcular_estatisticas(amostras)
+
+    summary_path = args.diretorio / "summary.json"
+    summary_path.write_text(json.dumps(saida, indent=2, ensure_ascii=False) + "\n")
+
+    print(f"Cenário: {cenario}")
+    print(f"CSVs lidos: {saida['execucoes']}")
+    print(f"Operações com amostras: {len(saida['operacoes'])}")
+    for op, stats in saida["operacoes"].items():
+        p999 = stats["p99_9_ns"]
+        p999_str = "—" if p999 is None else f"{p999/1e6:.3f}ms"
+        print(
+            f"  {op:<20} n={stats['n']:>10,d}  "
+            f"p50={stats['p50_ns']/1e6:.3f}ms  "
+            f"p95={stats['p95_ns']/1e6:.3f}ms  "
+            f"p99={stats['p99_ns']/1e6:.3f}ms  "
+            f"p99.9={p999_str:<10}  "
+            f"erros={stats['taxa_erro']*100:.2f}%"
+        )
+
+    print(f"\nResumo gravado em {summary_path}")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
