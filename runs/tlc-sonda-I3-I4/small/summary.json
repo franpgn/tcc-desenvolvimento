@@ -1,0 +1,15 @@
+{
+  "rodada": "quinta — verificação plena de I3/I4 (I1+I2+I5+I6 desabilitados)",
+  "config": "MC-small-sonda-I3-I4.cfg",
+  "cardinalidade": { "IDS": 2, "SIDS": 3, "REPLICAS": 2, "LIMITE": 3 },
+  "data_execucao": "2026-05-26T23:43:20Z",
+  "estados_gerados_ate_interrupcao": 171067230,
+  "estados_distintos_ate_interrupcao": 91322663,
+  "estados_na_fila_ate_interrupcao": 84872551,
+  "profundidade_alcancada": 10,
+  "tempo_execucao_segundos": 600,
+  "veredito": "INTERROMPIDO_POR_TIMEBOX",
+  "razao": "Espaço de estados sem invariantes de divergência (I1, I2, I5, I6) cresce explosivamente. Após 10 minutos de exploração com 8 workers, mais de 91 milhões de estados distintos haviam sido descobertos sem qualquer violação de TypeOK, I3 ou I4. A taxa de descoberta permanecia na ordem de 7,5 a 8 milhões de estados distintos por minuto, com fila crescendo a 84 milhões.",
+  "implicacao": "TypeOK, I3 (contador em 0..LIMITE) e I4 (motivo no tipo declarado) NÃO foram violados em nenhum dos 91+ milhões de estados explorados até profundidade 10. Esse resultado, embora parcial, é evidência forte de que ambos os invariantes de tipo são respeitados por construção das ações do modelo. Verificação total exigiria abordagem por simetria ou redução de espaço de estados (TLC -tlcversion 2.18 com -view), o que fica como otimização para TCC-II.",
+  "invariantes_confirmados_ate_aqui": ["TypeOK", "I3", "I4"]
+}
