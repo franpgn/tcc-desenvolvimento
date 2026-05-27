@@ -12,7 +12,7 @@ A Tabela 1 do Capítulo 3 §3.3.5 da monografia (*Parâmetros experimentais e fu
 
 | ID | Parâmetro (Cap. 3 §3.3.5) | Cobertura no repositório |
 |---|---|---|
-| T1 | Modo de replicação (`DIST_SYNC` alvo + `DIST_ASYNC` controle) | `cluster/infinispan-cluster.xml` (perfis SYNC e ASYNC) |
+| T1 | Modo de replicação (`DIST_ASYNC` alvo + `DIST_SYNC` controle) | `cluster/infinispan-cluster.xml` (caches `sessions-async` e `sessions`) |
 | T2 | Número de nós: 3 | `cluster/podman-compose.yml` |
 | T3 | `numOwners` = 2 | `cluster/infinispan-cluster.xml` |
 | T4 | `numSegments` = 256 | `cluster/infinispan-cluster.xml` |
