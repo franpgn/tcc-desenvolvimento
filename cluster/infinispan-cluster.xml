@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Configuração do cluster Infinispan para o TCC.
+  Cache 'sessions' em modo DIST_SYNC, numOwners=2, numSegments=64.
+  Mantém duas cópias por chave para tolerar falha de um nó.
+  Statistics habilitado para captura por OpenMetrics.
+
+  Para cenários com replicação assíncrona, alternar mode="ASYNC".
+-->
+<infinispan
+    xmlns="urn:infinispan:config:15.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="urn:infinispan:config:15.0 https://infinispan.org/schemas/infinispan-config-15.0.xsd">
+
+  <jgroups>
+    <stack-file name="cluster-stack" path="default-jgroups-tcp.xml"/>
+  </jgroups>
+
+  <cache-container name="default" statistics="true">
+    <transport cluster="cluster-tcc" stack="cluster-stack"/>
+
+    <distributed-cache name="sessions" mode="SYNC" owners="2" segments="64" statistics="true">
+      <locking concurrency-level="1000" acquire-timeout="15000" striping="false"/>
+      <state-transfer enabled="true" timeout="60000"/>
+      <partition-handling when-split="DENY_READ_WRITES" merge-policy="PREFERRED_NON_NULL"/>
+    </distributed-cache>
+
+    <distributed-cache name="counters" mode="SYNC" owners="2" segments="64" statistics="true">
+      <locking concurrency-level="1000" acquire-timeout="15000" striping="false"/>
+      <state-transfer enabled="true" timeout="60000"/>
+      <partition-handling when-split="DENY_READ_WRITES" merge-policy="PREFERRED_NON_NULL"/>
+    </distributed-cache>
+  </cache-container>
+
+  <server xmlns="urn:infinispan:server:15.0">
+    <interfaces>
+      <interface name="public">
+        <inet-address value="${infinispan.bind.address:0.0.0.0}"/>
+      </interface>
+    </interfaces>
+    <socket-bindings default-interface="public" port-offset="${infinispan.socket.binding.port-offset:0}">
+      <socket-binding name="default" port="${infinispan.bind.port:11222}"/>
+    </socket-bindings>
+    <endpoints socket-binding="default" security-realm="default"/>
+  </server>
+</infinispan>
