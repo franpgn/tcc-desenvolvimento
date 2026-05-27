@@ -7,15 +7,25 @@
 | Arquivo | Função |
 |---|---|
 | `cluster/podman-compose.yml` | Orquestra três nós Infinispan em *containers* Podman, com rede *bridge* dedicada e *health check* via REST. |
-| `cluster/infinispan-cluster.xml` | Define os *caches* `sessions` e `counters` em modo distribuído síncrono, com partição tratada por `DENY_READ_WRITES`. |
+| `cluster/infinispan-cluster.xml` | Define três *caches* coexistentes: `sessions` (síncrono), `sessions-async` (assíncrono) e `counters` (síncrono), todos com `owners=2`, `segments=64` e `partition-handling=DENY_READ_WRITES`. |
 
 A inicialização ocorre via `cd cluster && podman-compose up -d`. O *health check* é executado pelo Podman a cada 5 s; um nó é considerado saudável quando `GET /rest/v2/cache-managers/default/health/status` retorna 200 com credenciais `admin:infinispan`.
+
+## Caches disponíveis e regra de seleção
+
+| Cache | Modo | Uso previsto |
+|---|---|---|
+| `sessions` | `DIST_SYNC` | controle de sanidade do *baseline*; escritas síncronas em cenários `DIST_SYNC` |
+| `sessions-async` | `DIST_ASYNC` | cenário-alvo do trabalho; mede o comportamento sob replicação otimista |
+| `counters` | `DIST_SYNC` | contadores de tentativas falhas (operações O4, O5); mantidos em modo síncrono para isolar a hipótese de violação de monotonicidade na camada assíncrona de `sessions-async` |
+
+A escolha entre `sessions` e `sessions-async` ocorre no programa de carga, pelo parâmetro `--cache` da CLI (a definir em B-10). Os dois *caches* convivem no mesmo *cluster* sem interferência mútua, dado que os segmentos são calculados de forma independente por nome de *cache*. Essa configuração realiza a linha T1 da Tabela 1, que prevê `DIST_ASYNC` como cenário-alvo e `DIST_SYNC` como controle.
 
 ## Mapeamento Configuração ↔ Tabela 1
 
 | Linha Tx | Onde realiza | Trecho relevante |
 |---|---|---|
-| **T1** Modo de replicação | `cluster/infinispan-cluster.xml` | `<distributed-cache name="sessions" mode="SYNC" ...>` (cenário-alvo `ASYNC` será introduzido em B-03 como segundo *cache* ou perfil) |
+| **T1** Modo de replicação | `cluster/infinispan-cluster.xml` | `<distributed-cache name="sessions" mode="SYNC" ...>` e `<distributed-cache name="sessions-async" mode="ASYNC" ...>` cobrem alvo e controle |
 | **T2** Número de nós: 3 | `cluster/podman-compose.yml` | Serviços `isn1`, `isn2`, `isn3` |
 | **T3** `numOwners` = 2 | `cluster/infinispan-cluster.xml` | `owners="2"` em ambos os *caches* |
 | **T4** `numSegments` | `cluster/infinispan-cluster.xml` | `segments="64"` (valor herdado do esqueleto; T4 da tabela cita 256 como padrão Infinispan; o esqueleto adota 64 para reduzir tempo de *state transfer* em ambiente com três nós — desvio justificado a registrar em `docs/decisoes-tecnicas.md` em B-04 ou ajustar para 256 se o autor preferir aderência estrita à Tabela 1) |

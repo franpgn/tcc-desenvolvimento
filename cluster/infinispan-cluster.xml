@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
   Configuração do cluster Infinispan para o TCC.
-  Cache 'sessions' em modo DIST_SYNC, numOwners=2, numSegments=64.
-  Mantém duas cópias por chave para tolerar falha de um nó.
-  Statistics habilitado para captura por OpenMetrics.
-
-  Para cenários com replicação assíncrona, alternar mode="ASYNC".
+  Três caches coexistentes:
+    - sessions       (DIST_SYNC, controle de sanidade da Tabela 1, linha T1)
+    - sessions-async (DIST_ASYNC, cenário-alvo da Tabela 1, linha T1)
+    - counters       (DIST_SYNC, contadores de tentativas falhas; T1)
+  Todos: numOwners=2, numSegments=64, statistics=true para coleta por OpenMetrics.
+  O programa de carga seleciona o cache-alvo pelo parâmetro --cache na CLI.
 -->
 <infinispan
     xmlns="urn:infinispan:config:15.0"
@@ -20,6 +21,12 @@
     <transport cluster="cluster-tcc" stack="cluster-stack"/>
 
     <distributed-cache name="sessions" mode="SYNC" owners="2" segments="64" statistics="true">
+      <locking concurrency-level="1000" acquire-timeout="15000" striping="false"/>
+      <state-transfer enabled="true" timeout="60000"/>
+      <partition-handling when-split="DENY_READ_WRITES" merge-policy="PREFERRED_NON_NULL"/>
+    </distributed-cache>
+
+    <distributed-cache name="sessions-async" mode="ASYNC" owners="2" segments="64" statistics="true">
       <locking concurrency-level="1000" acquire-timeout="15000" striping="false"/>
       <state-transfer enabled="true" timeout="60000"/>
       <partition-handling when-split="DENY_READ_WRITES" merge-policy="PREFERRED_NON_NULL"/>
