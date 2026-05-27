@@ -1,0 +1,21 @@
+{
+  "config": "MC-medium.cfg",
+  "cardinalidade": {
+    "IDS": 3,
+    "SIDS": 3,
+    "REPLICAS": 2,
+    "LIMITE": 3
+  },
+  "data_execucao": "2026-05-26T23:38:03Z",
+  "tlc_version": "2.18 (rev 4ba7d88)",
+  "java_runtime": "OpenJDK Temurin 17.0.9+9",
+  "duracao_segundos": 0,
+  "estados_gerados": 316,
+  "estados_distintos": 312,
+  "estados_na_fila": 279,
+  "veredito": "INVARIANT_VIOLATED",
+  "invariante_violado": "I1",
+  "contraexemplo_passos": 6,
+  "contraexemplo_resumo": "Mesma sequencia que em MC-small: Login concorrente seguido de Logout local viola I1. Aumentar o numero de identidades para 3 nao introduz novo padrao de contraexemplo.",
+  "trace_file": "SessionStore_TTrace_1779863883.tla"
+}

@@ -1,0 +1,21 @@
+{
+  "config": "MC-full.cfg",
+  "cardinalidade": {
+    "IDS": 3,
+    "SIDS": 3,
+    "REPLICAS": 3,
+    "LIMITE": 3
+  },
+  "data_execucao": "2026-05-26T23:38:11Z",
+  "tlc_version": "2.18 (rev 4ba7d88)",
+  "java_runtime": "OpenJDK Temurin 17.0.9+9",
+  "duracao_segundos": 0,
+  "estados_gerados": 453,
+  "estados_distintos": 446,
+  "estados_na_fila": 413,
+  "veredito": "INVARIANT_VIOLATED",
+  "invariante_violado": "I1",
+  "contraexemplo_passos": 6,
+  "contraexemplo_resumo": "Mesma sequencia das configuracoes menores. A presenca de uma terceira replica nao altera o caminho minimo do contraexemplo, dado que a violacao depende apenas de duas replicas concorrentes.",
+  "trace_file": "SessionStore_TTrace_1779863891.tla"
+}
