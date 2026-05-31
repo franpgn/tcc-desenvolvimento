@@ -55,15 +55,21 @@ public class WorkloadMain {
             pool.awaitTermination(duracaoSeg + 30, TimeUnit.SECONDS);
 
             System.out.println("Violacoes detectadas: " + auditor.total());
-            latency.snapshot().forEach((op, arr) -> {
-                long[] sorted = arr.clone();
-                java.util.Arrays.sort(sorted);
-                long p50 = sorted.length > 0 ? sorted[sorted.length / 2] : 0L;
-                long p95 = sorted.length > 0 ? sorted[(int) (sorted.length * 0.95)] : 0L;
-                long p99 = sorted.length > 0 ? sorted[(int) (sorted.length * 0.99)] : 0L;
-                System.out.printf("%-16s n=%d p50=%dns p95=%dns p99=%dns%n",
-                        op, sorted.length, p50, p95, p99);
-            });
+            latency.snapshot().forEach((op, h) ->
+                System.out.printf("%-16s n=%d p50=%dns p95=%dns p99=%dns p999=%dns%n",
+                        op,
+                        h.getTotalCount(),
+                        h.getValueAtPercentile(50.0),
+                        h.getValueAtPercentile(95.0),
+                        h.getValueAtPercentile(99.0),
+                        h.getValueAtPercentile(99.9))
+            );
+
+            String dump = System.getenv("LATENCY_CSV");
+            if (dump != null && !dump.isBlank()) {
+                latency.dumpCsv(java.nio.file.Path.of(dump));
+                System.out.println("Latencias gravadas em " + dump);
+            }
         }
     }
 
