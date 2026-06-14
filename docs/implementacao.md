@@ -11,6 +11,7 @@ workload/
     ├── Scenario.java              # mistura de operações (S1 50/50, S2 95/5)
     ├── KeyGenerator.java          # gerador Zipfian de chaves de sessão
     ├── WarmupPolicy.java          # política de warm-up e descarte (T11)
+    ├── Cli.java                   # configuração de linha de comando (Picocli)
     ├── SessionOps.java            # operações O1-O7 via Hot Rod
     ├── SessionState.java          # modelo do estado de sessão
     ├── IdentityState.java         # modelo do estado de identidade
@@ -44,6 +45,7 @@ workload/
 | `workload/.../KeyGenerator.java` | T5, T6, T8 | Zipfian Rejection-Inversion, universo 100k, ρ=0,99 (B-08) |
 | `workload/.../Scenario.java` | T7 | enum S1 50/50 e S2 95/5 (B-08) |
 | `workload/.../WarmupPolicy.java` | T11 | warm-up max(60s, 10%) + descarte 5% restante (B-09) |
+| `workload/.../Cli.java` | T7, T9, T10, T11, T14 | CLI Picocli com --scenario, --duration, --ops, --rep, --threads, --seed, --warmup-min-sec, --csv-dir, --dry-run (B-10) |
 | `scripts/inject-crash.sh` | T17 | a implementar em B-11 |
 | `scripts/inject-jitter.sh` | T18 | a implementar em B-12 |
 | `scripts/collect-metrics.sh` | T19 | a implementar em B-13 |
@@ -52,6 +54,10 @@ workload/
 | `analysis/compare_scenarios.py` | T22 | a implementar em B-18 |
 
 ## Decisões técnicas a registrar
+
+### TD-006 — Escolha de Picocli como framework de CLI
+
+A camada de linha de comando do `WorkloadMain` foi migrada de parsing posicional para Picocli (`info.picocli:picocli:4.7.6`). A escolha contrasta com parsing manual e com a biblioteca `args4j`. Picocli é o padrão de fato em CLIs Java contemporâneas: suporta opções longas e curtas, gera mensagem de ajuda automaticamente conforme as anotações, valida tipos primitivos e enums sem código adicional, e tem ~250 KiB com zero dependências transitivas. O custo é uma dependência adicional, justificada pela manutenção que economiza em validação e documentação. A classe `Cli` é puramente um *value object* anotado, sem regra de negócio; a execução fica em `WorkloadMain.executar()`, o que permite testes diretos via `CommandLine.parseArgs()`.
 
 ### TD-005 — Implementação do descarte de 5% como tempo proporcional
 
