@@ -46,9 +46,10 @@ workload/
 | `workload/.../Scenario.java` | T7 | enum S1 50/50 e S2 95/5 (B-08) |
 | `workload/.../WarmupPolicy.java` | T11 | warm-up max(60s, 10%) + descarte 5% restante (B-09) |
 | `workload/.../Cli.java` | T7, T9, T10, T11, T14 | CLI Picocli com --scenario, --duration, --ops, --rep, --threads, --seed, --warmup-min-sec, --csv-dir, --dry-run (B-10) |
-| `scripts/inject-crash.sh` | T17 | a implementar em B-11 |
-| `scripts/inject-jitter.sh` | T18 | a implementar em B-12 |
-| `scripts/collect-metrics.sh` | T19 | a implementar em B-13 |
+| `scripts/inject-crash.sh` | T17 | F1 via `podman stop`+`sleep`+`podman start` (B-11) |
+| `scripts/inject-jitter.sh` | T18 | F3 via `tc qdisc netem`; trap remove disciplina (B-12) |
+| `scripts/collect-metrics.sh` | T19, T20 | snapshots `/metrics` por intervalo; manifest CSV (B-13) |
+| `scripts/run-baseline.sh` | integra T7, T10, T13, T14, T17, T18, T19, T22 | orquestra cenário × falha × repetição com análise final (B-19) |
 | `analysis/percentis.py` | T13 | a implementar em B-16 |
 | `analysis/bootstrap_ic.py` | T22 | a implementar em B-17 |
 | `analysis/compare_scenarios.py` | T22 | a implementar em B-18 |
