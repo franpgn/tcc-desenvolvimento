@@ -51,12 +51,20 @@ public class WorkloadMain {
                 .password("infinispan");
 
         try (RemoteCacheManager rcm = new RemoteCacheManager(cb.build())) {
-            LatencyRegistry latency = new LatencyRegistry();
+            long inicioMs = System.currentTimeMillis();
+            WarmupPolicy politica = WarmupPolicy.padrao(inicioMs, duracaoSeg);
+            LatencyRegistry latency = new LatencyRegistry(politica);
             InvariantAuditor auditor = new InvariantAuditor();
             SessionOps ops = new SessionOps(rcm, latency, auditor);
 
+            System.out.printf(
+                "Warm-up ate +%ds; medicao a partir de +%ds; total %ds%n",
+                (politica.warmupAteMs() - inicioMs) / 1000L,
+                (politica.medicaoInicioMs() - inicioMs) / 1000L,
+                duracaoSeg);
+
             ExecutorService pool = Executors.newFixedThreadPool(threads);
-            long fim = System.currentTimeMillis() + duracaoSeg * 1000L;
+            long fim = politica.medicaoFimMs();
 
             for (int t = 0; t < threads; t++) {
                 final int tid = t;
@@ -69,9 +77,11 @@ public class WorkloadMain {
 
             System.out.println("Violacoes detectadas: " + auditor.total());
             latency.snapshot().forEach((op, h) ->
-                System.out.printf("%-16s n=%d p50=%dns p95=%dns p99=%dns p999=%dns%n",
+                System.out.printf(
+                        "%-16s n=%d (descartados=%d) p50=%dns p95=%dns p99=%dns p999=%dns%n",
                         op,
                         h.getTotalCount(),
+                        latency.descartados(op),
                         h.getValueAtPercentile(50.0),
                         h.getValueAtPercentile(95.0),
                         h.getValueAtPercentile(99.0),

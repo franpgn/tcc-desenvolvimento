@@ -58,4 +58,38 @@ class LatencyRegistryTest {
         assertTrue(linhas.get(1).startsWith("login_ok,"));
         assertTrue(linhas.get(2).startsWith("validate,"));
     }
+
+    /**
+     * Com {@link WarmupPolicy#never()} o registro descarta todas as
+     * amostras e o contador {@code descartados} reflete o volume.
+     */
+    @Test
+    void warmupNeverDescartaTodasAsAmostras() {
+        LatencyRegistry reg = new LatencyRegistry(WarmupPolicy.never());
+        for (int i = 1; i <= 100; i++) {
+            reg.recordRaw("login_ok", i * 1_000L);
+        }
+        assertEquals(0L, reg.snapshot().getOrDefault("login_ok",
+                new Histogram(3)).getTotalCount(),
+            "Nenhuma amostra deveria entrar no histograma");
+        assertEquals(100L, reg.descartados("login_ok"),
+            "Contador de descartados deveria refletir as 100 amostras");
+    }
+
+    /**
+     * Mudança dinâmica de política simula a transição warm-up para
+     * medição durante o workload.
+     */
+    @Test
+    void transicaoNeverAlwaysEsvaziaApenasOsPosteriores() {
+        LatencyRegistry reg = new LatencyRegistry(WarmupPolicy.never());
+        for (int i = 1; i <= 50; i++) reg.recordRaw("login_ok", 1_000_000L);
+        assertEquals(50L, reg.descartados("login_ok"));
+        reg.definirPolitica(WarmupPolicy.always());
+        for (int i = 1; i <= 30; i++) reg.recordRaw("login_ok", 1_000_000L);
+        assertEquals(50L, reg.descartados("login_ok"),
+            "Descartados nao deveria mudar apos transicao");
+        assertEquals(30L, reg.snapshot().get("login_ok").getTotalCount(),
+            "Histograma deveria conter as 30 amostras pos-transicao");
+    }
 }

@@ -31,6 +31,30 @@ public class LatencyRegistry {
     private static final int SIGNIFICANT_DIGITS = 3;
 
     private final ConcurrentHashMap<String, Recorder> recorders = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, java.util.concurrent.atomic.AtomicLong> descartados
+            = new ConcurrentHashMap<>();
+    private volatile WarmupPolicy politica;
+
+    /** Constrói o registro com a política indicada para warm-up e descarte. */
+    public LatencyRegistry(WarmupPolicy politica) {
+        this.politica = politica != null ? politica : WarmupPolicy.always();
+    }
+
+    /** Construtor sem warm-up; equivalente a {@link WarmupPolicy#always()}. */
+    public LatencyRegistry() {
+        this(WarmupPolicy.always());
+    }
+
+    /** Troca a política após a construção (apenas para integração WorkloadMain). */
+    public void definirPolitica(WarmupPolicy politica) {
+        this.politica = politica != null ? politica : WarmupPolicy.always();
+    }
+
+    /** Quantidade de eventos descartados por estar fora da janela de medição. */
+    public long descartados(String op) {
+        java.util.concurrent.atomic.AtomicLong c = descartados.get(op);
+        return c == null ? 0L : c.get();
+    }
 
     public void record(String op, long startNs) {
         recordRaw(op, System.nanoTime() - startNs);
@@ -38,6 +62,12 @@ public class LatencyRegistry {
 
     /** Registra uma latência pré-computada (em nanossegundos). */
     public void recordRaw(String op, long deltaNs) {
+        if (!politica.deveRegistrar()) {
+            descartados
+                .computeIfAbsent(op, k -> new java.util.concurrent.atomic.AtomicLong())
+                .incrementAndGet();
+            return;
+        }
         long clamped = Math.min(Math.max(deltaNs, LOWEST_DISCERNIBLE_NS), HIGHEST_TRACKABLE_NS);
         recorders
             .computeIfAbsent(op, k -> new Recorder(LOWEST_DISCERNIBLE_NS, HIGHEST_TRACKABLE_NS, SIGNIFICANT_DIGITS))
