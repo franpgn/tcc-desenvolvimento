@@ -10,6 +10,7 @@ workload/
     ├── WorkloadMain.java          # ponto de entrada
     ├── Scenario.java              # mistura de operações (S1 50/50, S2 95/5)
     ├── KeyGenerator.java          # gerador Zipfian de chaves de sessão
+    ├── WarmupPolicy.java          # política de warm-up e descarte (T11)
     ├── SessionOps.java            # operações O1-O7 via Hot Rod
     ├── SessionState.java          # modelo do estado de sessão
     ├── IdentityState.java         # modelo do estado de identidade
@@ -42,7 +43,7 @@ workload/
 | `workload/.../InvariantAuditor.java` | M2 (Cap. 3 §3.3.4) | checagens I1-I4 imediato + auditoria I5/I6 periódica (B-07) |
 | `workload/.../KeyGenerator.java` | T5, T6, T8 | Zipfian Rejection-Inversion, universo 100k, ρ=0,99 (B-08) |
 | `workload/.../Scenario.java` | T7 | enum S1 50/50 e S2 95/5 (B-08) |
-| *Warm-up* + descarte | T11 | a implementar em B-09 |
+| `workload/.../WarmupPolicy.java` | T11 | warm-up max(60s, 10%) + descarte 5% restante (B-09) |
 | `scripts/inject-crash.sh` | T17 | a implementar em B-11 |
 | `scripts/inject-jitter.sh` | T18 | a implementar em B-12 |
 | `scripts/collect-metrics.sh` | T19 | a implementar em B-13 |
@@ -51,6 +52,10 @@ workload/
 | `analysis/compare_scenarios.py` | T22 | a implementar em B-18 |
 
 ## Decisões técnicas a registrar
+
+### TD-005 — Implementação do descarte de 5% como tempo proporcional
+
+T11 da Tabela 1 prescreve descarte das "primeiras 5\,\% das amostras" após o warm-up. Como o {@link LatencyRegistry} usa HdrHistogram, que não preserva ordem temporal das amostras, a implementação adotada em {@link WarmupPolicy} traduz a fração de amostras em fração de tempo: descarta 5\,\% do tempo nominal de medição posterior ao warm-up. A aproximação é exata se a taxa de operações for estacionária, hipótese válida porque o objetivo do descarte é justamente eliminar a região onde a taxa ainda não estabilizou. O contador {@code descartados} no {@link LatencyRegistry} permite auditar quantas amostras caíram nessa janela após a execução.
 
 ### TD-004 — Algoritmo de amostragem Zipfian
 
