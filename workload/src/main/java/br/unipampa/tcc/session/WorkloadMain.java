@@ -74,8 +74,9 @@ public class WorkloadMain {
             int op = r.nextInt(100);
             try {
                 if (op < 50) {                       // 50% login + validate + logout
-                    String sid = ops.login(identidade, "cred");
-                    if (sid != null) {
+                    OpResult login = ops.login(identidade, "cred");
+                    if (login.code() == OpResult.Code.OK_LOGIN) {
+                        String sid = login.sessionId();
                         ops.validate(sid);
                         ops.logout(sid);
                     }

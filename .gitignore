@@ -6,6 +6,8 @@ target/
 .classpath
 .project
 .settings/
+# Subproduto do maven-shade-plugin
+**/dependency-reduced-pom.xml
 
 # IDEs
 .idea/
