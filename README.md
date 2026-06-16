@@ -8,32 +8,64 @@ Este repositório materializa a frente experimental do trabalho. A frente teóri
 
 ## Vínculo com o TCC
 
-A Tabela 1 do Capítulo 3 §3.3.5 da monografia (*Parâmetros experimentais e fundamentação na literatura*) fixa, em 22 linhas T1 a T22, os parâmetros operacionais do *baseline*. Este repositório realiza cada linha de forma observável e reproduzível. A coluna `Cobertura` da tabela abaixo indica onde cada parâmetro é implementado.
+A Tabela 1 do Capítulo 3 §3.3.5 da monografia (*Parâmetros experimentais e fundamentação na literatura*) fixa, em 22 linhas T1 a T22, os parâmetros operacionais do *baseline*. Este repositório realiza cada linha de forma observável e reproduzível. A cobertura consolidada está em [`docs/resumos-para-tcc/13-cobertura-tabela1.md`](docs/resumos-para-tcc/13-cobertura-tabela1.md).
 
-| ID | Parâmetro (Cap. 3 §3.3.5) | Cobertura no repositório |
-|---|---|---|
-| T1 | Modo de replicação (`DIST_SYNC` alvo + `DIST_ASYNC` controle) | `cluster/infinispan-cluster.xml` (perfis SYNC e ASYNC) |
-| T2 | Número de nós: 3 | `cluster/podman-compose.yml` |
-| T3 | `numOwners` = 2 | `cluster/infinispan-cluster.xml` |
-| T4 | `numSegments` = 256 | `cluster/infinispan-cluster.xml` |
-| T5 | *Payload* fixo de 1 KB | `workload/.../SessionOps.java` |
-| T6 | Distribuição Zipfian ρ=0,99 | `workload/.../KeyGenerator.java` |
-| T7 | Mistura 50/50 (S1) + 95/5 (S2) | `workload/.../WorkloadMain.java` (CLI) |
-| T8 | 100 000 chaves | `workload/` + `scripts/run-baseline.sh` |
-| T9 | 10⁶ operações por execução | idem |
-| T10 | 30 repetições por cenário | `scripts/run-baseline.sh` |
-| T11 | *Warm-up* 60 s ou 10 % | `workload/.../WorkloadMain.java` |
-| T12 | Carga = 75 % do pico do piloto | `scripts/calibrate.sh` |
-| T13 | p50, p95, p99 (p99,9 quando n ≥ 10⁶) | `analysis/percentis.py` |
-| T14 | 10 min sem falha; 30 min com falha | `scripts/run-baseline.sh` |
-| T15 | MTU 1500 | `cluster/podman-compose.yml` |
-| T16 | FD\_ALL3 padrão (8 s / 40 s) | `cluster/infinispan-cluster.xml` |
-| T17 | F1: *crash* de 60 s | `scripts/inject-crash.sh` |
-| T18 | F3: +50 ms p99 lognormal | `scripts/inject-jitter.sh` |
-| T19 | M1-M7 expostas via OpenMetrics | `cluster/` + `scripts/collect-metrics.sh` |
-| T20 | Endpoint OpenMetrics | nativo do Infinispan 15 |
-| T21 | TLC 2-2-2, 3-3-2, 3-3-3 | `spec/SessionStore.tla` + `spec/run-tlc.sh` |
-| T22 | Mann-Whitney + *bootstrap* 10 000 | `analysis/bootstrap_ic.py` + `analysis/compare_scenarios.py` |
+Resumo: 11 linhas em ✅ (implementado e testado), 10 em ⚠️ (implementado mas requer cluster vivo) e 1 em ❌ (T12 depende de calibração).
+
+## Arquitetura
+
+```mermaid
+flowchart TB
+    subgraph host["Host Linux com Podman"]
+        subgraph net["Rede bridge infinispan-net"]
+            isn1["isn1<br/>Infinispan 15.0<br/>HotRod :11222<br/>caches sessions, counters"]
+            isn2["isn2<br/>Infinispan 15.0<br/>HotRod :11223<br/>caches sessions, counters"]
+            isn3["isn3<br/>Infinispan 15.0<br/>HotRod :11224<br/>caches sessions, counters"]
+        end
+
+        workload["workload (Java 17)<br/>Cli, WorkloadMain<br/>SessionOps O1-O7<br/>KeyGenerator (Zipfian)<br/>LatencyRegistry (HdrHist)<br/>InvariantAuditor (I1-I6)<br/>WarmupPolicy"]
+        scripts["scripts/<br/>inject-crash.sh (F1)<br/>inject-jitter.sh (F3)<br/>collect-metrics.sh<br/>run-baseline.sh"]
+        spec["spec/ (TLA+ + TLC)<br/>SessionStore.tla<br/>MC-small/medium/full.cfg"]
+        analysis["analysis/ (Python)<br/>percentis.py<br/>bootstrap_ic.py<br/>compare_scenarios.py"]
+        runs[("runs/<br/>latencies.csv<br/>metrics-*.prom<br/>summary.json<br/>tlc/output.txt")]
+    end
+
+    workload -- Hot Rod --> isn1
+    workload -- Hot Rod --> isn2
+    workload -- Hot Rod --> isn3
+    scripts -. podman stop / tc-netem .-> net
+    workload --> runs
+    spec --> runs
+    runs --> analysis
+```
+
+## Fluxo de uma execução de baseline
+
+```mermaid
+sequenceDiagram
+    participant U as Usuário
+    participant B as run-baseline.sh
+    participant M as collect-metrics.sh
+    participant W as workload (jar)
+    participant F as inject-crash/jitter
+    participant A as analysis/*.py
+
+    U->>B: ./run-baseline.sh --scenarios S1 --falhas F1
+    loop por (cenário, falha, repetição)
+        B->>M: inicia em background
+        B->>W: inicia em background com --csv-dir
+        Note over W: warm-up (60s ou 10%)
+        Note over W: descarte (5% restante)
+        opt falha != none
+            B->>F: dispara no offset adequado
+        end
+        W-->>B: termina (latencies.csv)
+        M-->>B: termina (metrics-*.prom)
+    end
+    B->>A: percentis.py por (cen, falha)
+    A-->>B: summary.json
+    B-->>U: exit code
+```
 
 ## Estrutura de pastas
 
@@ -41,12 +73,17 @@ A Tabela 1 do Capítulo 3 §3.3.5 da monografia (*Parâmetros experimentais e fu
 tcc-desenvolvimento/
 ├── cluster/                # podman-compose.yml + infinispan-cluster.xml
 ├── workload/               # projeto Maven Java 17 (Hot Rod client)
-├── scripts/                # injeção de falha, warmup, coleta de métricas
+├── scripts/                # injeção de falha, coleta, pipeline end-to-end
 ├── spec/                   # SessionStore.tla + cfg + runner TLC
 ├── analysis/               # parsing, percentis, bootstrap, Mann-Whitney
-├── runs/                   # saídas brutas e summary.json (ver D-005)
+├── runs/                   # saídas brutas (.gitignore) + summary.json
 ├── docs/                   # documentação técnica + resumos para o TCC
 │   ├── planejamento-inicial.md
+│   ├── configuracao-infinispan.md
+│   ├── implementacao.md
+│   ├── spec-formal.md
+│   ├── testes.md
+│   ├── criterios-de-aceite.md
 │   ├── pull-request-template.md
 │   └── resumos-para-tcc/   # consumidos pelo trabalho acadêmico
 ├── README.md
@@ -55,7 +92,33 @@ tcc-desenvolvimento/
 └── .gitignore
 ```
 
-## Quickstart (planejado — válido após blocos 1 a 4 do *backlog*)
+## Início rápido
+
+### Pré-requisitos
+
+- JDK Temurin 17 (`java -version` deve mostrar 17.0.x)
+- Maven 3.9+ (`mvn -v`)
+- Podman + podman-compose (somente para subir o *cluster*)
+- Python 3.11+ com `numpy` e `scipy` (para a análise)
+- TLA+ tools (`tla2tools.jar`) para o *model checking*
+
+### Compilar o *workload*
+
+```bash
+cd workload
+mvn -q -DskipTests package
+```
+
+Gera `target/session-workload-0.1.0-SNAPSHOT.jar` (*shaded*, ~19 MB, mainClass `br.unipampa.tcc.session.WorkloadMain`).
+
+### Rodar os testes
+
+```bash
+cd workload
+mvn test
+```
+
+Cobertura JUnit atual: 34 testes (KeyGenerator, Scenario, WarmupPolicy, Cli, LatencyRegistry, InvariantAuditor).
 
 ### Subir o *cluster* Infinispan
 
@@ -65,51 +128,68 @@ podman-compose up -d
 podman ps --filter "label=infinispan" --format "table {{.Names}}\t{{.Status}}"
 ```
 
-### Rodar o *workload* sem falha (Cenário S1, 50/50)
-
-```bash
-cd workload
-mvn -q package
-java -jar target/session-workload-0.1.0-SNAPSHOT-shaded.jar \
-    --scenario S1 \
-    --duration 600 \
-    --warmup 60 \
-    --ops 1000000 \
-    --servers 127.0.0.1:11222,127.0.0.1:11223,127.0.0.1:11224
-```
-
 ### Rodar o *model checking* inicial
 
 ```bash
 cd spec
 ./run-tlc.sh small         # configuração 2-2-2
 ./run-tlc.sh medium        # configuração 3-3-2
-./run-tlc.sh full          # configuração 3-3-3 (pode estourar timebox)
+./run-tlc.sh full          # configuração 3-3-3
 ```
 
-### Analisar resultados de uma rodada
+Logs em `runs/tlc/<size>/output.txt`.
+
+### Executar o *baseline* completo
 
 ```bash
-cd analysis
-python percentis.py ../runs/S1-sem-falha
-python bootstrap_ic.py ../runs/S1-sem-falha
-python compare_scenarios.py ../runs/S1-sem-falha ../runs/S1-F1
+./scripts/run-baseline.sh --scenarios S1,S2 --falhas none,F1,F3 --rep 30 --duration 600
 ```
+
+Saída em `runs/baseline-<TS>/<scen>/<falha>/rep-NNN/`. `--dry-run` lista as combinações previstas.
 
 ## Fluxo de desenvolvimento
 
-O trabalho neste repositório segue um protocolo estruturado em quatro passos, descrito em `docs/planejamento-inicial.md`:
+O trabalho neste repositório segue um protocolo estruturado em quatro passos, descrito em [`docs/planejamento-inicial.md`](docs/planejamento-inicial.md):
 
-1. **Planejamento técnico** de cada incremento, com critérios de aceite e *branch* nominal.
+1. **Planejamento técnico** de cada incremento, com critérios de aceite ([`docs/criterios-de-aceite.md`](docs/criterios-de-aceite.md)) e *branch* nominal.
 2. **Aprovação do autor** antes da execução.
-3. **Implementação** em *branch* específica, com testes e documentação técnica.
-4. **Revisão e validação do autor** antes de qualquer *merge* em `main` ou `git push`.
+3. **Implementação** em *branch* específica, com testes ([`docs/testes.md`](docs/testes.md)) e documentação técnica.
+4. **Revisão e validação do autor** antes de qualquer *push* para `origin/*` (política de *push* exige aprovação explícita por entrega ou em lote por *branch*).
 
-Resumos técnicos das entregas são depositados em `docs/resumos-para-tcc/` para alimentar a escrita do TCC. Detalhes em [`CONTRIBUTING.md`](CONTRIBUTING.md).
+Resumos técnicos das entregas são depositados em [`docs/resumos-para-tcc/`](docs/resumos-para-tcc/) para alimentar a escrita do TCC. Detalhes em [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 ## Estado atual
 
-`feature/bootstrap-repo` — *bootstrap* inicial em curso. Nenhum bloco do *backlog* finalizado ainda. Consulte [`docs/planejamento-inicial.md`](docs/planejamento-inicial.md).
+Snapshot em 2026-06-14:
+
+- **`main`** consolidou as entregas dos blocos B-01 a B-04, B-14, B-15 e B-16 a B-18 (sete *pull requests* mergidos antes da revisão de política de 2026-06-14).
+- **`feature/workload-operations`** = `main` + B-05 (PR #8 OPEN no remoto, aguardando *merge* do autor).
+- **`feature/workload-latency`** = + B-06 (`HdrHistogram`).
+- **`feature/workload-auditor`** = + B-07 (`InvariantAuditor`).
+- **`feature/workload-load`** = + B-08 (`KeyGenerator` + `Scenario`).
+- **`feature/workload-warmup`** = + B-09 (`WarmupPolicy`).
+- **`feature/workload-cli`** = + B-10 (`Cli` Picocli).
+- **`feature/falha-f1-crash`** = + B-11 (`inject-crash.sh`).
+- **`feature/falha-f3-jitter`** = + B-12 (`inject-jitter.sh`).
+- **`feature/metrics-collector`** = + B-13 (`collect-metrics.sh`).
+- **`feature/pipeline-baseline`** = + B-19 (`run-baseline.sh`).
+- **`docs/resumos-para-tcc`** = + 14 resumos cobrindo B-02 a B-19.
+- **`docs/consolidacao-final`** (esta) = + atualização desta documentação (B-20).
+- **`docs/objetivo-revisao`** (à parte) = revisão do `planejamento-inicial.md`.
+
+**Frente formal:** executada. Cinco rodadas do TLC concluídas; resultados em `runs/tlc/`.
+
+**Sandbox operacional:** OpenJDK Temurin 17, Maven 3.9.9, TLA+ tools, Python 3.11 + numpy + scipy em `~/tools/`. **Não disponível no sandbox:** Podman, `tc-netem` com `NET_ADMIN`, imagem `quay.io/infinispan/server:15.0`. Atividades dependentes ficam para a máquina do autor.
+
+## Documentos relacionados
+
+- [`docs/planejamento-inicial.md`](docs/planejamento-inicial.md) — objetivo, *backlog* B-01..B-20, decisões D-001..D-009.
+- [`docs/implementacao.md`](docs/implementacao.md) — visão técnica do código.
+- [`docs/configuracao-infinispan.md`](docs/configuracao-infinispan.md) — *cluster* e perfis SYNC/ASYNC.
+- [`docs/spec-formal.md`](docs/spec-formal.md) — `SessionStore.tla` e configurações TLC.
+- [`docs/testes.md`](docs/testes.md) — estratégia e cobertura de testes.
+- [`docs/criterios-de-aceite.md`](docs/criterios-de-aceite.md) — critérios por bloco.
+- [`docs/resumos-para-tcc/`](docs/resumos-para-tcc/) — resumos curtos por bloco para a escrita acadêmica.
 
 ## Licença
 
