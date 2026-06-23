@@ -53,15 +53,31 @@ public final class WarmupPolicy {
      *         segundos seguido de descarte de {@code 5\%} do tempo restante.
      */
     public static WarmupPolicy padrao(long inicioMs, long duracaoSeg) {
-        return padrao(inicioMs, duracaoSeg, Clock.systemUTC());
+        return padrao(inicioMs, duracaoSeg, WARMUP_MINIMO_SEG, Clock.systemUTC());
     }
 
     /** Versão de {@link #padrao(long, long)} com {@link Clock} injetável (testes). */
     public static WarmupPolicy padrao(long inicioMs, long duracaoSeg, Clock clock) {
+        return padrao(inicioMs, duracaoSeg, WARMUP_MINIMO_SEG, clock);
+    }
+
+    /**
+     * Versão com warm-up mínimo configurável. O warm-up efetivo é
+     * {@code max(warmupMinimoSeg, 10% * duracaoSeg)}. Útil para execuções
+     * curtas de validação/smoke, onde o mínimo de 60\,s consumiria toda a
+     * execução; as baterias reais usam o default de 60\,s.
+     *
+     * @param warmupMinimoSeg piso de warm-up em segundos (>= 0)
+     */
+    public static WarmupPolicy padrao(long inicioMs, long duracaoSeg,
+                                      long warmupMinimoSeg, Clock clock) {
         if (duracaoSeg < 0) {
             throw new IllegalArgumentException("duracaoSeg deve ser >= 0");
         }
-        long warmupSeg = Math.max(WARMUP_MINIMO_SEG,
+        if (warmupMinimoSeg < 0) {
+            throw new IllegalArgumentException("warmupMinimoSeg deve ser >= 0");
+        }
+        long warmupSeg = Math.max(warmupMinimoSeg,
                 (long) Math.ceil(duracaoSeg * FRACAO_WARMUP_MINIMA));
         long restanteSeg = Math.max(0, duracaoSeg - warmupSeg);
         long descarteSeg = (long) Math.ceil(restanteSeg * FRACAO_DESCARTE);

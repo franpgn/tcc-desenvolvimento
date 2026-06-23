@@ -89,7 +89,9 @@ public final class WorkloadMain {
 
         try (RemoteCacheManager rcm = new RemoteCacheManager(cb.build())) {
             long inicioMs = System.currentTimeMillis();
-            WarmupPolicy politica = WarmupPolicy.padrao(inicioMs, cli.duracaoSeg);
+            WarmupPolicy politica = WarmupPolicy.padrao(
+                    inicioMs, cli.duracaoSeg, cli.warmupMinimoSeg,
+                    java.time.Clock.systemUTC());
             LatencyRegistry latency = new LatencyRegistry(politica);
             InvariantAuditor auditor = new InvariantAuditor();
             // Âncora epoch-ns capturada no início da repetição (T2): pareia
