@@ -92,7 +92,12 @@ public final class WorkloadMain {
             WarmupPolicy politica = WarmupPolicy.padrao(inicioMs, cli.duracaoSeg);
             LatencyRegistry latency = new LatencyRegistry(politica);
             InvariantAuditor auditor = new InvariantAuditor();
-            SessionOps ops = new SessionOps(rcm, latency, auditor);
+            // Âncora epoch-ns capturada no início da repetição (T2): pareia
+            // Instant.now() (parede) com System.nanoTime() (monotônico) para
+            // converter cada evento monotônico em epoch-ns no CSV.
+            EpochClock relogio = EpochClock.capturarAgora();
+            EventCsvWriter eventos = new EventCsvWriter(politica);
+            SessionOps ops = new SessionOps(rcm, latency, auditor, eventos, relogio);
 
             System.out.printf(
                 "Warm-up ate +%ds; medicao a partir de +%ds; total %ds%n",
@@ -131,8 +136,10 @@ public final class WorkloadMain {
             if (cli.csvDir != null && !cli.csvDir.isBlank()) {
                 Path destino = Path.of(cli.csvDir,
                         String.format("rep-%03d.csv", rep));
-                latency.dumpCsv(destino);
-                System.out.println("Latencias gravadas em " + destino);
+                eventos.flush(destino);
+                System.out.printf(
+                        "Eventos gravados em %s (registrados=%d, descartados_warmup=%d)%n",
+                        destino, eventos.totalRegistrados(), eventos.descartadosWarmup());
             }
         }
     }

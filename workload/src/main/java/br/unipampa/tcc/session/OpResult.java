@@ -44,6 +44,39 @@ public final class OpResult {
     public Code code() { return code; }
     public boolean isOk() { return code == Code.OK_LOGIN || code == Code.OK_VALIDATE
             || code == Code.OK_STATUS || code == Code.OK_NOOP; }
+
+    /**
+     * Mapeia o {@link Code} interno para o código de retorno canônico
+     * gravado na coluna {@code return_code} do CSV de eventos, consumido
+     * pelo pipeline {@code analysis/}.
+     *
+     * <p>Tabela de mapeamento (aprovada pelo Gestor):</p>
+     * <pre>
+     *   OK_LOGIN        -> OK
+     *   OK_VALIDATE     -> VALID
+     *   OK_STATUS       -> COUNTED
+     *   OK_NOOP         -> NONE
+     *   NOT_FOUND       -> NONE
+     *   BLOCKED         -> BLOCKED
+     *   ERROR_TRANSPORT -> ERROR_TRANSPORT
+     * </pre>
+     *
+     * <p>Todos os códigos exceto {@code ERROR_TRANSPORT} pertencem ao
+     * conjunto {@code SUCESSOS} de {@code analysis/percentis.py}, de modo
+     * que a {@code taxa_erro} reflete apenas falhas de transporte.</p>
+     */
+    public String returnCode() {
+        switch (code) {
+            case OK_LOGIN:        return "OK";
+            case OK_VALIDATE:     return "VALID";
+            case OK_STATUS:       return "COUNTED";
+            case OK_NOOP:         return "NONE";
+            case NOT_FOUND:       return "NONE";
+            case BLOCKED:         return "BLOCKED";
+            case ERROR_TRANSPORT: return "ERROR_TRANSPORT";
+            default:              return "ERROR_TRANSPORT";
+        }
+    }
     public String sessionId() { return code == Code.OK_LOGIN ? (String) payload : null; }
     public SessionState.Estado estado() { return code == Code.OK_VALIDATE ? (SessionState.Estado) payload : null; }
     public IdentityState.Status status() { return code == Code.OK_STATUS ? (IdentityState.Status) payload : null; }
