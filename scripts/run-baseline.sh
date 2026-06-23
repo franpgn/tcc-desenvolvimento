@@ -26,6 +26,12 @@
 # final. NAO faz git push.
 set -euo pipefail
 
+# Forca UTF-8 na saida do Python: o terminal Windows usa cp1252 por padrao
+# e o print de compare_scenarios.py contem 'Delta' (U+0394), o que
+# dispararia UnicodeEncodeError no stdout (sem afetar o JSON gravado).
+export PYTHONIOENCODING=utf-8
+export PYTHONUTF8=1
+
 # ------------------------------------------------------------------ paths
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
