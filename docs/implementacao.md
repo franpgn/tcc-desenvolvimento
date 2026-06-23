@@ -84,8 +84,9 @@ o ProtoStream padrão falha ao serializar e toda escrita vira
 | `workload/.../EpochClock.java` | T2 (eventos) | âncora epoch-ns por repetição |
 | `workload/.../EventCsvWriter.java` | T3/T4 (eventos) | CSV `op_id,operation,start_ns,end_ns,replica,return_code,key` |
 | `scripts/inject-crash.sh` | T17 | `podman stop`/`start` por 60s (B-11) |
-| `scripts/run-baseline.sh` | bateria F1 | S1/S2 × {none, F1}, popula `runs/` e aciona `analysis/` |
-| `scripts/inject-jitter.sh` | T18 | a implementar em B-12 |
+| `scripts/run-baseline.sh` | bateria F1/F3 | S1/S2 × {none, F1, F3}, popula `runs/` e aciona `analysis/` |
+| `scripts/inject-jitter.sh` | T18 | F3: `podman exec <node> tc qdisc ... netem delay 20ms 13ms distribution normal` (p99 ≈ +50 ms); trap de cleanup garante remoção; exit 5 = netem rejeitado (B-12) |
+| `scripts/inject-jitter.test.sh` | T-jit-1..4,7 | suite shell sem-VM (28 asserts) de `inject-jitter.sh` + dry-run F3 do `run-baseline.sh` (B-12) |
 | `scripts/collect-metrics.sh` | T19 | a implementar em B-13 |
 | `analysis/percentis.py` | T13 | a implementar em B-16 |
 | `analysis/bootstrap_ic.py` | T22 | a implementar em B-17 |

@@ -63,6 +63,43 @@ Carga de 60s (rep 1, warm-up 10s) contra o *cluster* real; depois
 Latências observadas (smoke, sem falha): Validate p50 ≈ 0,41 ms / p99 ≈
 1,99 ms; Login p50 ≈ 0,46 ms / p99 ≈ 2,63 ms.
 
+## Critérios de aceite do B-12 (falha F3 — jitter/netem)
+
+`scripts/inject-jitter.sh` injeta a falha F3 (T18) aplicando uma
+disciplina `netem` (atraso+jitter) na interface egress do nó alvo, **de
+dentro do container** (`podman exec <node> tc qdisc ...`). Calibração
+oficial TCC-I: `delay 20ms 13ms distribution normal` → p99 ≈ MEAN +
+2,326·JITTER ≈ +50 ms (alvo T18). `--distribution lognormal` fica como
+rodada de sensibilidade.
+
+Testes sem-VM (rodam neste host antes do reboot da VM Hyper-V), em
+`scripts/inject-jitter.test.sh` — **28 asserts, 0 falhas**:
+
+| ID | Teste | Esperado | Estado |
+|---|---|---|---|
+| T-jit-1 | `--help` documenta todas as flags | exit 0, uso completo | PASS |
+| T-jit-2 | `--dry-run` imprime add/sleep/del **sem podman no PATH** | exit 0 | PASS |
+| T-jit-2b/2c | dry-run com `--node`/`--distribution lognormal`/decimais/`us` | refletido no plano | PASS |
+| T-jit-3 | `--duration abc` | exit 2 | PASS |
+| T-jit-4 | `--delay 20` (sem sufixo), `--jitter xyz`, `--distribution gauss`, `--duration 0`, flag desconhecida, flag sem valor | exit 2 | PASS |
+| T-jit-7 | `run-baseline.sh --faults "none F3" --dry-run` | descreve ramo F3 (`S1 / F3`), exit 0 | PASS |
+
+Exit codes verificados diretamente: 0 (`--help`, `--dry-run`), 2 (arg
+inválido), 3 (`podman` ausente no modo real). Os exit 4 (nó ausente/parado)
+e 5 (netem rejeitado / `sch_netem` ausente) só são atingíveis com podman e
+são exercitados na VM.
+
+**Pendente de VM (gate pós-reboot, ver `docs/plano-f3-vm-netem.md` §3.5/3.7):**
+
+| ID | Teste | Ambiente |
+|---|---|---|
+| T-jit-4 (real) | sonda netem falha sem `sch_netem` → exit 3 com diagnóstico | WSL2/container sem módulo |
+| T-jit-5 | Ctrl-C durante o `sleep` → qdisc removido (trap de cleanup) | VM com cluster |
+| T-jit-6 | `--duration 5` real: durante há netem, depois interface limpa | VM com cluster |
+
+A execução real exige a VM porque o kernel do WSL2 não traz `sch_netem`
+(motivo da migração para Hyper-V/Ubuntu).
+
 ## Como reproduzir
 
 ```bash
@@ -77,4 +114,8 @@ java -jar workload/target/session-workload-0.1.0-SNAPSHOT.jar \
 cd analysis && python percentis.py ../runs/smoke
 # 4. bateria baseline (S1/S2 x none/F1)
 bash scripts/run-baseline.sh --reps 3 --duration 120 --warmup-min 20
+# 5. bateria F3 (jitter) — APENAS na VM com sch_netem
+bash scripts/run-baseline.sh --faults "none F3" --reps 3 --duration 120 --warmup-min 20
+# 6. testes sem-VM do inject-jitter (rodam em qualquer host)
+bash scripts/inject-jitter.test.sh        # 28 PASS
 ```
