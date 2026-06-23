@@ -15,10 +15,45 @@ workload/
     ├── SessionOps.java            # operações O1-O7 via Hot Rod
     ├── SessionState.java          # modelo do estado de sessão
     ├── IdentityState.java         # modelo do estado de identidade
-    ├── OpResult.java              # tipo único de retorno das O1-O7
-    ├── LatencyRegistry.java       # registro de latência por operação
+    ├── OpResult.java              # tipo único de retorno das O1-O7 + map return_code
+    ├── LatencyRegistry.java       # registro de latência por operação (resumo stdout)
+    ├── EpochClock.java            # âncora epoch-ns por repetição (T2 eventos)
+    ├── EventCsvWriter.java        # trilha de eventos crus em CSV (T3/T4 eventos)
     └── InvariantAuditor.java      # detector de violações I1-I6
 ```
+
+## Trilha de eventos crus (CSV consumido por analysis/)
+
+Além do resumo de latência por histograma (`LatencyRegistry`, impresso em
+*stdout*), o *workload* grava uma **trilha de eventos crus** por repetição,
+um evento por operação O1–O5, no formato exato esperado pelo pipeline:
+
+```
+op_id,operation,start_ns,end_ns,replica,return_code,key
+```
+
+- **`OpResult.returnCode()`** mapeia o `Code` interno para o código
+  canônico: `OK_LOGIN→OK`, `OK_VALIDATE→VALID`, `OK_STATUS→COUNTED`,
+  `OK_NOOP→NONE`, `NOT_FOUND→NONE`, `BLOCKED→BLOCKED`,
+  `ERROR_TRANSPORT→ERROR_TRANSPORT`. Apenas `ERROR_TRANSPORT` fica fora do
+  conjunto de sucessos de `analysis/percentis.py`, então `taxa_erro`
+  reflete somente falhas de transporte.
+- **`EpochClock`** captura, no início de cada repetição, o par
+  (`epochBaseNanos = Instant.now()`, `monoBaseNanos = System.nanoTime()`)
+  e converte cada instante monotônico das operações em epoch-ns,
+  preservando durações.
+- **`EventCsvWriter`** mantém um `op_id` global (`AtomicLong`), suprime
+  eventos de warm-up/descarte (mesma `WarmupPolicy` do registry) e grava
+  `<csv-dir>/rep-NNN.csv`.
+- **`SessionOps`** emite, em O1–O5, o evento cru com nome canônico
+  (`Login`, `Validate`, `Logout`, `IncrementFailure`, `ResetFailures`),
+  `replica` = servidor de conexão (primeiro servidor Hot Rod; *fallback*
+  aceito ao *owner* real) e `return_code`.
+
+O *marshaller* do cliente Hot Rod é `JavaSerializationMarshaller` (os
+valores `SessionState`/`IdentityState` são POJOs `Serializable`); sem isso
+o ProtoStream padrão falha ao serializar e toda escrita vira
+`ERROR_TRANSPORT`.
 
 ## Mapeamento operações ↔ Cap. 3 §3.3.1
 
@@ -46,7 +81,10 @@ workload/
 | `workload/.../Scenario.java` | T7 | enum S1 50/50 e S2 95/5 (B-08) |
 | `workload/.../WarmupPolicy.java` | T11 | warm-up max(60s, 10%) + descarte 5% restante (B-09) |
 | `workload/.../Cli.java` | T7, T9, T10, T11, T14 | CLI Picocli com --scenario, --duration, --ops, --rep, --threads, --seed, --warmup-min-sec, --csv-dir, --dry-run (B-10) |
-| `scripts/inject-crash.sh` | T17 | a implementar em B-11 |
+| `workload/.../EpochClock.java` | T2 (eventos) | âncora epoch-ns por repetição |
+| `workload/.../EventCsvWriter.java` | T3/T4 (eventos) | CSV `op_id,operation,start_ns,end_ns,replica,return_code,key` |
+| `scripts/inject-crash.sh` | T17 | `podman stop`/`start` por 60s (B-11) |
+| `scripts/run-baseline.sh` | bateria F1 | S1/S2 × {none, F1}, popula `runs/` e aciona `analysis/` |
 | `scripts/inject-jitter.sh` | T18 | a implementar em B-12 |
 | `scripts/collect-metrics.sh` | T19 | a implementar em B-13 |
 | `analysis/percentis.py` | T13 | a implementar em B-16 |
