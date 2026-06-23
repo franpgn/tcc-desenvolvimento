@@ -87,6 +87,14 @@ public final class WorkloadMain {
                 .username(cli.usuario)
                 .password(cli.senha);
 
+        // Os valores armazenados (SessionState, IdentityState) sao POJOs
+        // Serializable. O marshaller padrao do Hot Rod (ProtoStream) exige
+        // schema registrado e, sem ele, todo put de POJO falha com erro de
+        // marshalling (visto como ERROR_TRANSPORT). Usa-se o marshaller de
+        // serializacao Java, com a allow-list restrita ao pacote do modelo.
+        cb.marshaller(new org.infinispan.commons.marshall.JavaSerializationMarshaller());
+        cb.addJavaSerialAllowList("br.unipampa.tcc.session.*", "java.time.*");
+
         try (RemoteCacheManager rcm = new RemoteCacheManager(cb.build())) {
             long inicioMs = System.currentTimeMillis();
             WarmupPolicy politica = WarmupPolicy.padrao(
