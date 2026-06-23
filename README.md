@@ -70,13 +70,20 @@ podman ps --filter "label=infinispan" --format "table {{.Names}}\t{{.Status}}"
 ```bash
 cd workload
 mvn -q package
-java -jar target/session-workload-0.1.0-SNAPSHOT-shaded.jar \
+java -jar target/session-workload-0.1.0-SNAPSHOT.jar \
     --scenario S1 \
     --duration 600 \
-    --warmup 60 \
+    --warmup-min-sec 60 \
     --ops 1000000 \
-    --servers 127.0.0.1:11222,127.0.0.1:11223,127.0.0.1:11224
+    --servers 127.0.0.1:11222,127.0.0.1:11223,127.0.0.1:11224 \
+    --csv-dir runs/S1-none
 ```
+
+O *cluster* já foi validado de ponta a ponta: forma `cluster_size=3`
+HEALTHY (discovery TCPPING, imagem pinada `15.0.21.Final`) e o *workload*
+grava a trilha de eventos `op_id,operation,start_ns,end_ns,replica,return_code,key`
+consumida por `analysis/`. A bateria *baseline* S1/S2 × {none, F1} é
+orquestrada por `scripts/run-baseline.sh`.
 
 ### Rodar o *model checking* inicial
 
@@ -91,9 +98,9 @@ cd spec
 
 ```bash
 cd analysis
-python percentis.py ../runs/S1-sem-falha
-python bootstrap_ic.py ../runs/S1-sem-falha
-python compare_scenarios.py ../runs/S1-sem-falha ../runs/S1-F1
+python percentis.py ../runs/S1-none           # glob nao-recursivo: aponte para a pasta da rep
+python bootstrap_ic.py ../runs/S1-none
+python compare_scenarios.py ../runs/S1-none ../runs/S1-F1
 ```
 
 ## Fluxo de desenvolvimento
