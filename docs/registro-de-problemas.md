@@ -46,6 +46,14 @@
 - **Causa:** `WarmupPolicy.padrao` usava o piso fixo de 60s de warm-up (`max(60, 10%*dur)`), consumindo toda uma execução curta; `--warmup-min-sec` da CLI não era repassado.
 - **Correção:** *overload* `WarmupPolicy.padrao(..., warmupMinimoSeg, clock)` e fiação de `cli.warmupMinimoSeg` no `WorkloadMain`. O *default* de 60s permanece para as baterias reais. Commit `feat(workload): wire --warmup-min-sec`.
 
+## 2026-06-23 — Baseline F3 na VM Ubuntu
+
+### P-08 — `podman exec <node> tc ...` não aplica netem (F3)
+
+- **Sintoma:** ao rodar o baseline F3 na VM, a injeção falhava: a imagem oficial Infinispan (UBI minimal) não tem `tc` no `PATH` e o container não recebe a capability `NET_ADMIN`, então `podman exec <node> tc qdisc add ... netem` é rejeitado.
+- **Diagnóstico/validação:** aplicar o `netem` **a partir do host**, entrando no *namespace de rede* do container via `nsenter`, funciona (exit 0; `qdisc netem ... delay 20ms 13ms` aplicado no `eth0` do container e removido limpo). Comandos validados manualmente: `PID=$(podman inspect -f '{{.State.Pid}}' isn2)`; `sudo nsenter -t $PID -n tc qdisc add dev eth0 root netem delay 20ms 13ms distribution normal`; `... qdisc show`; `... qdisc del dev eth0 root`.
+- **Correção:** `scripts/inject-jitter.sh` e `verificar_sem_netem()` em `scripts/run-baseline.sh` migrados de `podman exec` para `sudo nsenter -t <pid> -n tc ...`, com o PID resolvido por `podman inspect` antes de registrar o `trap` de cleanup (cleanup idempotente em EXIT/INT/TERM mesmo se o `add` falhar). Dependências da execução real agora incluem `nsenter` (util-linux) e `sudo` no host (container não precisa de `tc`/`NET_ADMIN`); `--dry-run` segue sem dependências. Exit codes preservados (3 dependência ausente, 4 container/PID, 5 netem rejeitado). Recomenda-se `sudo` sem senha para a bateria (cache do sudo expira em ~15 min). Detalhe em `docs/implementacao.md` TD-007. Commit `fix(f3): aplica netem via nsenter host-side`.
+
 ## Observação de modelagem (não é defeito)
 
 Com 8 *threads* = 8 identidades fixas (`user-<tid>`), `incrementFailure`

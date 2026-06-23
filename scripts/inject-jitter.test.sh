@@ -54,19 +54,22 @@ for f in --node --iface --delay --jitter --distribution --duration --dry-run --h
     contem "T-jit-1 documenta ${f}" "${f}" "${OUT}"
 done
 
-echo "== T-jit-2: --dry-run (defaults) imprime add/sleep/del, exit 0, sem podman =="
+echo "== T-jit-2: --dry-run (defaults) imprime nsenter add/sleep/del, exit 0, sem podman =="
 OUT="$(PATH="${PATH_SEM_PODMAN}" bash "${JITTER}" --dry-run 2>&1)"; RC=$?
 ok "T-jit-2 exit code" "0" "${RC}"
-contem "T-jit-2 comando add (podman exec ... netem)" "tc qdisc add dev eth0 root netem delay 20ms 13ms distribution normal" "${OUT}"
+contem "T-jit-2 comando add (nsenter ... tc netem)" "sudo nsenter -t <pid> -n tc qdisc add dev eth0 root netem delay 20ms 13ms distribution normal" "${OUT}"
+contem "T-jit-2 resolve pid via podman inspect" "podman inspect -f '{{.State.Pid}}'" "${OUT}"
+ok "T-jit-2 nao usa podman exec" "0" "$(echo "${OUT}" | grep -cF 'podman exec')"
 contem "T-jit-2 sleep" "sleep 1800" "${OUT}"
-contem "T-jit-2 comando del" "tc qdisc del dev eth0 root" "${OUT}"
+contem "T-jit-2 comando del" "sudo nsenter -t <pid> -n tc qdisc del dev eth0 root" "${OUT}"
 contem "T-jit-2 nada executado" "dry-run: nada executado" "${OUT}"
 
 echo "== T-jit-2b: --dry-run com node/distribuicao custom reflete no plano =="
 OUT="$(PATH="${PATH_SEM_PODMAN}" bash "${JITTER}" --dry-run --node isn1 \
         --distribution lognormal --delay 25ms --jitter 18ms --duration 90 2>&1)"; RC=$?
 ok "T-jit-2b exit code" "0" "${RC}"
-contem "T-jit-2b node/dist custom" "podman exec isn1 tc qdisc add dev eth0 root netem delay 25ms 18ms distribution lognormal" "${OUT}"
+contem "T-jit-2b inspect do node custom" "podman inspect -f '{{.State.Pid}}' isn1" "${OUT}"
+contem "T-jit-2b node/dist custom" "sudo nsenter -t <pid> -n tc qdisc add dev eth0 root netem delay 25ms 18ms distribution lognormal" "${OUT}"
 contem "T-jit-2b duration custom" "sleep 90" "${OUT}"
 
 echo "== T-jit-3: --duration nao-inteiro retorna 2 =="

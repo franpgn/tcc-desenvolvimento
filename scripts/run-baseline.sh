@@ -12,12 +12,14 @@
 # segundos e reativado. Nao requer netem/VM (isso e F3).
 #
 # Falha F3 (jitter/atraso): durante a janela de medicao, um no recebe uma
-# disciplina netem (atraso+jitter) via scripts/inject-jitter.sh
-# (podman exec <node> tc qdisc ...) por DURACAO_JITTER segundos; a
-# disciplina e sempre removida ao fim. F3 NAO derruba o no (cluster
-# permanece size=3), logo nao ha health-gate apos a repeticao. Exige
-# sch_netem no kernel: roda na VM Hyper-V/Ubuntu (ver docs/plano-f3-vm-netem.md),
-# nao no WSL2.
+# disciplina netem (atraso+jitter) via scripts/inject-jitter.sh, que
+# aplica o netem a partir do HOST entrando no netns do container via
+# nsenter (sudo nsenter -t <pid> -n tc qdisc ...), por DURACAO_JITTER
+# segundos; a disciplina e sempre removida ao fim. F3 NAO derruba o no
+# (cluster permanece size=3), logo nao ha health-gate apos a repeticao.
+# Exige nsenter/tc/sudo/sch_netem NO HOST: roda na VM Hyper-V/Ubuntu (ver
+# docs/plano-f3-vm-netem.md), nao no WSL2. O container NAO precisa de tc
+# nem de NET_ADMIN.
 #
 # Pre-requisitos verificados pelo Worker:
 #   - cluster Infinispan size=3 HEALTHY (cluster/podman-compose.yml up -d);
@@ -210,11 +212,21 @@ except Exception: print(0)' 2>/dev/null || echo 0)
 # Verificacao leve pos-F3: o inject-jitter.sh ja remove o netem (e tem trap
 # de cleanup), mas confirmamos aqui que o no alvo nao ficou degradado entre
 # repeticoes. Limpa de forma idempotente caso encontre residuo.
+# Mesmo mecanismo do inject-jitter.sh: resolve o PID do container e opera o
+# tc no netns via 'sudo nsenter -t <pid> -n tc ...' (a imagem nao tem
+# tc/NET_ADMIN, entao 'podman exec' nao serve). Se o PID nao resolver,
+# apenas registra e segue (a verificacao e best-effort).
 verificar_sem_netem() {
-    if podman exec "${JITTER_NODE}" tc qdisc show dev "${JITTER_IFACE}" 2>/dev/null \
+    local pid
+    pid="$(podman inspect -f '{{.State.Pid}}' "${JITTER_NODE}" 2>/dev/null || true)"
+    if [[ -z "${pid}" || "${pid}" == "0" ]]; then
+        log "  AVISO: nao resolveu PID de ${JITTER_NODE}; pulando gate de netem residual"
+        return 0
+    fi
+    if sudo nsenter -t "${pid}" -n tc qdisc show dev "${JITTER_IFACE}" 2>/dev/null \
             | grep -q netem; then
         log "  AVISO: netem residual em ${JITTER_NODE} (${JITTER_IFACE}); removendo"
-        podman exec "${JITTER_NODE}" tc qdisc del dev "${JITTER_IFACE}" root \
+        sudo nsenter -t "${pid}" -n tc qdisc del dev "${JITTER_IFACE}" root \
             >/dev/null 2>&1 || true
     else
         log "  ${JITTER_NODE} sem netem residual (cluster intacto, size=3)"
