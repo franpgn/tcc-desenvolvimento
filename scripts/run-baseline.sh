@@ -35,6 +35,12 @@
 #                           [--scenarios "S1 S2"]
 #                           [--faults "none F1 F3"] [--dry-run]
 #
+# Variavel de ambiente PODMAN: binario do podman, propagado (export) aos
+# scripts-filhos inject-crash.sh/inject-jitter.sh. Padrao 'podman' (rootless).
+# Para o cluster ROOTFUL da VM Hyper-V -- unico modo em que o netem do F3
+# alcanca o trafego do cliente -- prefixe a bateria:
+#   PODMAN="sudo podman" scripts/run-baseline.sh --faults "none F3" ...
+#
 # Defaults sao curtos (validacao): 3 reps x 120s. Aumente para a bateria
 # final. NAO faz git push.
 set -euo pipefail
@@ -44,6 +50,15 @@ set -euo pipefail
 # dispararia UnicodeEncodeError no stdout (sem afetar o JSON gravado).
 export PYTHONIOENCODING=utf-8
 export PYTHONUTF8=1
+
+# Binario do podman, propagado aos scripts-filhos (inject-crash.sh /
+# inject-jitter.sh). Padrao: 'podman' (rootless). Para o cluster ROOTFUL da
+# VM Hyper-V (unico modo em que o netem do F3 alcanca o trafego do cliente,
+# ja que o rootless faz bypass do eth0 via pasta), prefixe a bateria com:
+#   PODMAN="sudo podman" scripts/run-baseline.sh --faults "none F3" ...
+# O export garante que o override chegue aos scripts-filhos invocados abaixo.
+PODMAN="${PODMAN:-podman}"
+export PODMAN
 
 # ------------------------------------------------------------------ paths
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -96,7 +111,7 @@ while [[ $# -gt 0 ]]; do
         --seed)            SEED_BASE="$2"; shift 2 ;;
         --dry-run)         DRY_RUN=1; shift ;;
         --help|-h)
-            sed -n '2,40p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
+            sed -n '2,45p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
             exit 0 ;;
         *) echo "Erro: argumento desconhecido '$1'" >&2; exit 2 ;;
     esac
@@ -218,7 +233,7 @@ except Exception: print(0)' 2>/dev/null || echo 0)
 # apenas registra e segue (a verificacao e best-effort).
 verificar_sem_netem() {
     local pid
-    pid="$(podman inspect -f '{{.State.Pid}}' "${JITTER_NODE}" 2>/dev/null || true)"
+    pid="$(${PODMAN} inspect -f '{{.State.Pid}}' "${JITTER_NODE}" 2>/dev/null || true)"
     if [[ -z "${pid}" || "${pid}" == "0" ]]; then
         log "  AVISO: nao resolveu PID de ${JITTER_NODE}; pulando gate de netem residual"
         return 0

@@ -95,6 +95,16 @@ OUT="$(PATH="${PATH_SEM_PODMAN}" bash "${JITTER}" --dry-run --delay 0.5ms --jitt
 ok "T-jit-2c exit code" "0" "${RC}"
 contem "T-jit-2c decimal/us" "netem delay 0.5ms 200us" "${OUT}"
 
+echo "== T-jit-2d: override PODMAN se reflete no plano do --dry-run =="
+# Cluster ROOTFUL (VM Hyper-V): PODMAN="sudo podman" deve aparecer no comando
+# que resolve o PID do container. O default (sem override) usa 'podman'.
+OUT="$(PATH="${PATH_SEM_PODMAN}" PODMAN="sudo podman" bash "${JITTER}" --dry-run 2>&1)"; RC=$?
+ok "T-jit-2d exit code" "0" "${RC}"
+contem "T-jit-2d plano usa 'sudo podman inspect'" "pid=\$(sudo podman inspect -f '{{.State.Pid}}' isn2)" "${OUT}"
+OUT="$(PATH="${PATH_SEM_PODMAN}" bash "${JITTER}" --dry-run 2>&1)"
+ok "T-jit-2d default nao usa sudo no inspect" "0" "$(echo "${OUT}" | grep -cF 'sudo podman inspect')"
+contem "T-jit-2d default usa 'podman inspect'" "pid=\$(podman inspect -f '{{.State.Pid}}' isn2)" "${OUT}"
+
 echo "== T-jit-7: run-baseline.sh --faults 'none F3' --dry-run descreve o plano F3 =="
 if [[ -f "${BASE}" ]]; then
     OUT="$(PATH="${PATH_SEM_PODMAN}" bash "${BASE}" --faults "none F3" \

@@ -48,6 +48,12 @@
 set -euo pipefail
 
 NOME="$(basename "$0")"
+# Binario do podman. Override para cluster ROOTFUL (VM Hyper-V/Ubuntu):
+#   PODMAN="sudo podman" bash scripts/inject-jitter.sh ...
+# No rootless o port-forwarding (pasta) faz bypass do eth0 e o netem nao
+# alcanca o trafego do cliente; o cluster oficial F3 roda em rootful, logo o
+# 'podman inspect' precisa rodar como root para enxergar o PID do container.
+PODMAN="${PODMAN:-podman}"
 NODE_PADRAO="isn2"
 IFACE_PADRAO="eth0"
 DELAY_PADRAO="20ms"
@@ -88,9 +94,17 @@ Dependencias (execucao real, no host da VM): podman, nsenter (util-linux),
 tc (iproute2), sudo e o modulo sch_netem. O container NAO precisa de tc
 nem de NET_ADMIN. Recomenda-se sudo sem senha para a bateria.
 
+Variavel de ambiente:
+  PODMAN  Binario do podman usado para resolver o PID do container.
+          Padrao: 'podman' (rootless). Para o cluster ROOTFUL (VM Hyper-V,
+          onde o netem so atinge o trafego do cliente), prefixe:
+            PODMAN="sudo podman" ${NOME} --node isn2 --duration 90
+          O nsenter/tc continuam com 'sudo' (host), independentemente disso.
+
 Exemplos:
   ${NOME} --node isn2 --duration 90
   ${NOME} --node isn2 --distribution lognormal --delay 25ms --jitter 18ms
+  PODMAN="sudo podman" ${NOME} --node isn2 --duration 90   # cluster rootful
   ${NOME} --dry-run
 EOF
 }
@@ -163,7 +177,7 @@ log() {
 
 # Plano (texto) do mecanismo nsenter host-side. No --dry-run o <pid> ainda
 # nao foi resolvido (sem podman), entao usa-se o placeholder <pid>.
-PLANO_INSPECT="podman inspect -f '{{.State.Pid}}' ${NODE}"
+PLANO_INSPECT="${PODMAN} inspect -f '{{.State.Pid}}' ${NODE}"
 PLANO_ADD="sudo nsenter -t <pid> -n tc qdisc add dev ${IFACE} root netem delay ${DELAY} ${JITTER} distribution ${DISTRIBUICAO}"
 PLANO_SHOW="sudo nsenter -t <pid> -n tc qdisc show dev ${IFACE}"
 PLANO_DEL="sudo nsenter -t <pid> -n tc qdisc del dev ${IFACE} root"
@@ -181,8 +195,8 @@ if [[ "${DRY_RUN}" -eq 1 ]]; then
 fi
 
 # ---------------------------------------------------------- dependencias
-if ! command -v podman >/dev/null 2>&1; then
-    echo "Erro: 'podman' nao encontrado no PATH" >&2
+if ! command -v ${PODMAN} >/dev/null 2>&1; then
+    echo "Erro: '${PODMAN}' nao encontrado no PATH" >&2
     exit 3
 fi
 if ! command -v nsenter >/dev/null 2>&1; then
@@ -196,12 +210,12 @@ if ! command -v sudo >/dev/null 2>&1; then
     exit 3
 fi
 
-if ! podman inspect "${NODE}" >/dev/null 2>&1; then
+if ! ${PODMAN} inspect "${NODE}" >/dev/null 2>&1; then
     echo "Erro: container '${NODE}' nao encontrado" >&2
     exit 4
 fi
 
-ESTADO="$(podman inspect -f '{{.State.Status}}' "${NODE}")"
+ESTADO="$(${PODMAN} inspect -f '{{.State.Status}}' "${NODE}")"
 if [[ "${ESTADO}" != "running" ]]; then
     echo "Erro: container '${NODE}' nao esta running (estado='${ESTADO}')" >&2
     exit 4
@@ -210,10 +224,10 @@ fi
 # Resolve o PID do container ANTES de registrar o trap, para que o cleanup
 # opere sobre um pid estavel mesmo se o 'add' falhar no meio. Se vazio (ou
 # 0), o container nao esta com processo valido -> exit 4.
-PID="$(podman inspect -f '{{.State.Pid}}' "${NODE}" 2>/dev/null || true)"
+PID="$(${PODMAN} inspect -f '{{.State.Pid}}' "${NODE}" 2>/dev/null || true)"
 if [[ -z "${PID}" || "${PID}" == "0" ]]; then
     echo "Erro: nao foi possivel resolver o PID do container '${NODE}'." >&2
-    echo "      podman inspect retornou PID vazio/0 (container nao-running?)." >&2
+    echo "      ${PODMAN} inspect retornou PID vazio/0 (container nao-running?)." >&2
     exit 4
 fi
 log "PID do container ${NODE}: ${PID}"
