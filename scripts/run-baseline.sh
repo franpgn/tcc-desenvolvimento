@@ -89,6 +89,13 @@ log "scenarios={${SCENARIOS}} faults={${FAULTS}} crash=${CRASH_NODE}/${CRASH_DUR
 # de medicao.
 rodar_rep() {
     local cenario="$1" fault="$2" rep="$3" destino="$4"
+    local nnn; nnn="$(printf '%03d' "${rep}")"
+
+    # Cada repeticao grava num diretorio-scratch proprio para evitar que a
+    # CLI (que sempre emite rep-001.csv) sobrescreva a saida da repeticao
+    # anterior. O CSV unico e movido para <destino>/rep-NNN.csv no fim.
+    local scratch="${destino}/.scratch-${nnn}"
+    mkdir -p "${scratch}"
 
     local crash_pid=""
     if [[ "${fault}" == "F1" ]]; then
@@ -96,7 +103,7 @@ rodar_rep() {
         local atraso=$(( WARMUP_MIN + 5 ))
         ( sleep "${atraso}"
           "${INJECT}" --node "${CRASH_NODE}" --duration "${CRASH_DURATION}" \
-              >> "${destino}/inject-crash.log" 2>&1 ) &
+              >> "${destino}/inject-crash-rep${nnn}.log" 2>&1 ) &
         crash_pid=$!
         log "  rep ${rep}: crash F1 agendado em +${atraso}s (pid ${crash_pid})"
     fi
@@ -112,15 +119,15 @@ rodar_rep() {
         --username "${USERNAME}" \
         --password "${PASSWORD}" \
         --seed "$(( SEED_BASE + rep ))" \
-        --csv-dir "${destino}" \
-        > "${destino}/rep-$(printf '%03d' "${rep}").stdout.log" 2>&1 || true
+        --csv-dir "${scratch}" \
+        > "${destino}/rep-${nnn}.stdout.log" 2>&1 || true
 
-    # A CLI grava sempre rep-001.csv (rep=1 por invocacao); renomeia para a
-    # repeticao da bateria para nao sobrescrever.
-    if [[ -f "${destino}/rep-001.csv" && "${rep}" -ne 1 ]]; then
-        mv "${destino}/rep-001.csv" \
-           "${destino}/rep-$(printf '%03d' "${rep}").csv"
+    if [[ -f "${scratch}/rep-001.csv" ]]; then
+        mv -f "${scratch}/rep-001.csv" "${destino}/rep-${nnn}.csv"
+    else
+        log "  AVISO: rep ${rep} nao gerou CSV (ver rep-${nnn}.stdout.log)"
     fi
+    rm -rf "${scratch}"
 
     if [[ -n "${crash_pid}" ]]; then
         wait "${crash_pid}" 2>/dev/null || true
